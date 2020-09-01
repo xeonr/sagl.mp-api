@@ -1,0 +1,93 @@
+{
+	"linterOptions": {
+		"exclude": [
+			"tests/**/*.*"
+		]
+	},
+	"extends": [
+		"tslint-microsoft-contrib",
+		"tslint-import-group-ordering"
+	],
+	"jsRules": {},
+	"rules": {
+		"import-group-ordering": {
+			"options": {
+				"imports-groups": [
+					{
+						"name": "dependencies"
+					},
+					{
+						"name": "product"
+					},
+					{
+						"name": "other"
+					}
+				],
+				"matching-rules": [
+					{
+						"type": "dependencies",
+						"imports-group": "dependencies",
+						"disable-native-nodejs-modules": false,
+						"from-package.json": true
+					},
+					{
+						"type": "project",
+						"matches": "^~",
+						"imports-group": "product"
+					},
+					{
+						"type": "project",
+						"matches": ".*",
+						"imports-group": "other"
+					}
+				]
+			}
+		},
+		"align": false,
+		"promise-function-async": false,
+		"indent": [
+			true,
+			"tabs"
+		],
+		"no-unsafe-any": false,
+		"completed-docs": false,
+		"missing-jsdoc": false,
+		"no-relative-imports": false,
+		"trailing-comma": [
+			true,
+			{
+				"multiline": "always",
+				"singleline": "never"
+			}
+		],
+		"no-parameter-properties": false,
+		"no-backbone-get-set-outside-model": false,
+		"no-submodule-imports": [
+			true,
+			"~utils",
+			"~models"
+		],
+		"no-implicit-dependencies": [
+			true,
+			[
+				"~utils",
+				"~models"
+			]
+		],
+		"export-name": false,
+		"strict-boolean-expressions": [
+			false
+		],
+		"await-promise": [
+			true,
+			"Bluebird",
+			"PromiseLike"
+		],
+		"no-non-null-assertion": false,
+		"newline-per-chained-call": false,
+		"no-null-keyword": false,
+		"max-func-body-length": false,
+		"typedef": false
+	},
+	"rulesDirectory": []
+}

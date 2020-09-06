@@ -9,9 +9,21 @@ const s3: aws.S3 = new aws.S3({
 	region: get('s3.region'),
 	s3ForcePathStyle: true,
 	signatureVersion: 'v4',
+	logger: console,
 });
 
 class S3CDN {
+	public listFiles(key: string): Promise<string[]> {
+		return s3.listObjectsV2({ Prefix: key, Bucket: get('s3.bucket') }).promise().then(r => {
+			return (r.Contents || []).map(i => i.Key);
+		});
+	}
+
+	public getFile(key: string): Promise<any> {
+		return s3.getObject({ Key: key, Bucket: get('s3.bucket') }).promise()
+			.then(r => r.Body);
+	}
+
 	public getUrl(key: string): string {
 		return s3.getSignedUrl('getObject', {
 			Bucket: get('s3.bucket'),

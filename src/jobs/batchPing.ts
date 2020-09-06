@@ -9,23 +9,32 @@ import { gzip } from 'zlib';
 
 import { Logger } from '../util/Logger';
 import { lookupIP } from '../util/MaxMind';
+import { GameServer } from './../models/GameServer';
 import { S3 } from './../util/S3';
 
 const gzipPromise: (buf: Buffer) => Promise<Buffer> = promisify(gzip);
 
 export interface IQueryValue {
+	address: string;
 	hosted: boolean;
 	payload: QueryResponse;
 	ip: { asn: Asn; country: string; city: string | null };
 }
 
+export interface IFileContents {
+	servers?: { [key: string]: IQueryValue };
+	success?: { [key: string]: IQueryValue };
+	failed?: string[];
+}
+
 // tslint:disable no-http-string
 async function getServers(): Promise<{ servers: string[]; hosted: Set<string> }> {
+	const servers = await GameServer.findAll({}).then(i => i.map(e => `${e.address}:${e.port}`));
 	const internet: string = (await got.get('http://lists.sa-mp.com/0.3.7/internet')).body.trim();
 	const hosted: string = (await got.get('http://lists.sa-mp.com/0.3.7/hosted')).body.trim();
 
 	return {
-		servers: Array.from(new Set([...internet.split('\n'), ...hosted.split('\n')])),
+		servers: Array.from(new Set([...servers, ...internet.split('\n'), ...hosted.split('\n')])),
 		hosted: new Set([...hosted.split('\n')]),
 	};
 }
@@ -39,6 +48,7 @@ async function queryServer(ip: string, hosted: boolean, map: Map<string, IQueryV
 	}).then(r => {
 		const { asn, city } = lookupIP(address);
 		map.set(ip, {
+			address: ip,
 			hosted,
 			payload: r,
 			ip: {
@@ -58,10 +68,23 @@ async function queryServer(ip: string, hosted: boolean, map: Map<string, IQueryV
 
 	const queue = new PQueue({ concurrency: 20 });
 	const map = new Map<string, IQueryValue>();
-	const failed = new Set<string>();
 
 	for (const srv of servers) {
-		queue.add(() => pRetry(() => queryServer(srv, hosted.has(srv), map), { retries: 3 }).catch(() => { failed.add(srv); }))
+		queue.add(() => pRetry(() => queryServer(srv, hosted.has(srv), map), { retries: 3 }).catch(() => {
+			const [address] = srv.split(':');
+			const { asn, city } = lookupIP(address);
+
+			map.set(srv, {
+				address: srv,
+				hosted: hosted.has(srv),
+				payload: null,
+				ip: {
+					asn: pick(asn, ['autonomousSystemOrganization', 'autonomousSystemNumber']),
+					country: (<CountryRecord>city.country).isoCode,
+					city: (<CountryRecord>city.city).names ? (<CountryRecord>city.city).names.en : null,
+				},
+			});
+		}))
 			.catch(() => null);
 	}
 
@@ -76,8 +99,7 @@ async function queryServer(ip: string, hosted: boolean, map: Map<string, IQueryV
 	}, {});
 
 	const payload = JSON.stringify({
-		success: pl,
-		failed: Array.from(failed),
+		servers: pl,
 	});
 
 	const file: string =

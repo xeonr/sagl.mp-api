@@ -17,6 +17,12 @@ export class GameServerPing extends Model<GameServerPing> {
 	@Column
 	public port: number;
 
+	@Column(DataType.BOOLEAN)
+	public online: boolean;
+
+	@Column(DataType.BOOLEAN)
+	public hosted: boolean;
+
 	@Column
 	public hostname: string;
 
@@ -24,17 +30,17 @@ export class GameServerPing extends Model<GameServerPing> {
 	public gamemode: string;
 	@Column
 	public language: string;
-	@Column
+	@Column(DataType.BOOLEAN)
 	public passworded: boolean;
-	@Column
+	@Column(DataType.BOOLEAN)
 	public maxPlayers: number;
-	@Column
-	public online: number;
+	@Column(DataType.BOOLEAN)
+	public onlinePlayers: number;
 	@Column
 	public ping: number;
 
 	// Rules
-	@Column
+	@Column(DataType.BOOLEAN)
 	public lagcomp: boolean;
 	@Column
 	public mapname: string;
@@ -57,4 +63,7 @@ export class GameServerPing extends Model<GameServerPing> {
 
 	@Column(DataType.JSON)
 	public players: Json;
+
+	@Column(DataType.DATE)
+	public batchPingedAt: Date;
 }

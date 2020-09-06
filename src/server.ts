@@ -1,8 +1,10 @@
 import { Lifecycle, Request, RequestEvent, ResponseToolkit, Server } from '@hapi/hapi';
 import { get } from 'config';
 import * as Joi from 'joi';
-import { Sequelize } from 'sequelize-typescript';
 
+import * as ServerRoutes from './routes/server/server';
+
+import { db } from './util/DB';
 import { Logger } from './util/Logger';
 import { RouterFn } from './util/Types';
 
@@ -20,18 +22,10 @@ const server: Server = new Server({
 });
 
 const routes: ((router: Server) => void)[] = [
+	ServerRoutes.routes,
 ];
 
 (async (): Promise<void> => {
-	const db = new Sequelize({
-		database: 'some_db',
-		dialect: 'sqlite',
-		username: 'root',
-		password: '',
-		storage: './sql.db',
-		models: [`${__dirname}/models`],
-	}); // tslint:disable-line
-
 	// Point to docs.
 	server.route({
 		method: 'GET',

@@ -12,6 +12,8 @@ import { lookupIP } from '../util/MaxMind';
 import { GameServer } from './../models/GameServer';
 import { S3 } from './../util/S3';
 
+import '../util/DB';
+
 const gzipPromise: (buf: Buffer) => Promise<Buffer> = promisify(gzip);
 
 export interface IQueryValue {

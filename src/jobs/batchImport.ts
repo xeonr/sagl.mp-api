@@ -14,8 +14,8 @@ import { IFileContents, IQueryValue } from './batchPing';
 const pGunzip = promisify(gunzip);
 
 export function getServerList(payload: IFileContents): IQueryValue[] {
-	if (payload.servers?.length) {
-		return Object.values(payload);
+	if (!!payload.servers && Object.keys(payload.servers)?.length) {
+		return Object.values(payload.servers);
 	}
 
 	const servers = Object.keys(payload.success).map(i => ({
@@ -47,7 +47,7 @@ export async function getLastExport(): Promise<Date> {
 	const gamePing = await GameServerPing.findOne({ order: [['batchPingedAt', 'desc']], limit: 1 });
 
 	if (gamePing) {
-		return gamePing.batchPingedAt;
+		return new Date(+gamePing.batchPingedAt + 1000);
 	}
 
 	return new Date(0);
@@ -117,9 +117,15 @@ const doStuff = (async () => {
 	await db.authenticate();
 
 	const latestFile: string = await getFiles(await getLastExport());
-	const file = await S3.getFile(latestFile);
-	const fileAt = new Date(latestFile.split('/').reverse()[0].split('.json.gz')[0]);
+	if (!latestFile) {
+		Logger.info('No new import was found');
 
+		return;
+	}
+
+	const file = await S3.getFile(latestFile);
+
+	const fileAt = new Date(latestFile.split('/').reverse()[0].split('.json.gz')[0]);
 	const payload: IFileContents = JSON.parse((await pGunzip(file)).toString());
 
 	const servers = getServerList(payload);
@@ -147,9 +153,7 @@ const doStuff = (async () => {
 });
 
 (async () => {
-	// while (true) {
 	await doStuff();
-	// }
 })()
 	.catch((e: Error) => {
 		Logger.error('Error occurred with import', e);

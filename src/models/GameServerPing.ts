@@ -32,9 +32,9 @@ export class GameServerPing extends Model<GameServerPing> {
 	public language: string;
 	@Column(DataType.BOOLEAN)
 	public passworded: boolean;
-	@Column(DataType.BOOLEAN)
+	@Column
 	public maxPlayers: number;
-	@Column(DataType.BOOLEAN)
+	@Column
 	public onlinePlayers: number;
 	@Column
 	public ping: number;

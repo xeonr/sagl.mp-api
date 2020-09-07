@@ -1,0 +1,583 @@
+openapi: 3.0.0
+info:
+  title: Server API
+  version: '1.0'
+  description: 'Public metadata API for accessing SA:MP servers'
+servers:
+  - url: 'https://server-api.sagl.app/v1'
+    description: Production
+paths:
+  /statistics/current/host:
+    get:
+      summary: Return host distribution
+      tags:
+        - Live Statistics
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LiveHost'
+              examples:
+                Example response:
+                  value:
+                    - host: OVH SAS
+                      count: 130
+                    - host: LLC Baxet
+                      count: 40
+                    - host: Other
+                      count: 38
+                    - host: RS-Media LLC
+                      count: 30
+                    - host: AntiDDoS Solutions LLC
+                      count: 24
+                    - host: Storm Systems LLC
+                      count: 6
+                    - host: Hetzner Online GmbH
+                      count: 4
+                    - host: eTOP sp. z o.o.
+                      count: 3
+        '':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+              examples:
+                Example:
+                  value:
+                    - host: OVH SAS
+                      count: 130
+                    - host: LLC Baxet
+                      count: 40
+                    - host: Other
+                      count: 38
+                    - host: RS-Media LLC
+                      count: 30
+                    - host: AntiDDoS Solutions LLC
+                      count: 24
+                    - host: Storm Systems LLC
+                      count: 6
+                    - host: Hetzner Online GmbH
+                      count: 4
+                    - host: eTOP sp. z o.o.
+                      count: 3
+      operationId: get-statistics-host
+      description: |-
+        Returns the global hosting provider distribution for all SAMP servers. 
+
+
+        This is only for servers at the current time, not historical.
+
+        **Note**: If a host has 2 or fewer servers, it's bundled into the "Other" option.
+    parameters: []
+  /statistics/current/country:
+    get:
+      summary: Return country distribution
+      tags:
+        - Live Statistics
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LiveCountry'
+              examples:
+                Example:
+                  value:
+                    - country: RU
+                      count: 80
+                    - country: CA
+                      count: 68
+                    - country: FR
+                      count: 52
+                    - country: US
+                      count: 32
+                    - country: null
+                      count: 15
+                    - country: PL
+                      count: 8
+                    - country: BR
+                      count: 5
+                    - country: DE
+                      count: 5
+                    - country: NL
+                      count: 3
+                    - country: GB
+                      count: 3
+                    - country: SE
+                      count: 1
+                    - country: PT
+                      count: 1
+                    - country: RO
+                      count: 1
+                    - country: AU
+                      count: 1
+      operationId: get-statistics-current-country
+      description: 'This returns country distribution for all SA:MP servers we track.'
+  /statistics/current/players:
+    get:
+      summary: Return global player count
+      tags:
+        - Live Statistics
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  onlinePlayers:
+                    type: number
+                  maxPlayers:
+                    type: number
+                  averagePlayers:
+                    type: number
+                  globalFullness:
+                    type: number
+                    description: Percentage of global capacity used
+                required:
+                  - onlinePlayers
+                  - maxPlayers
+                  - averagePlayers
+                  - globalFullness
+              examples:
+                Example:
+                  value:
+                    onlinePlayers: 12396
+                    maxPlayers: 94594
+                    averagePlayers: 47.6769
+                    globalFullness: 13.104425227815716
+      operationId: get-statistics-current-players
+      description: Returns combined player count details for all servers we track
+  '/server/{host}:{port}':
+    parameters:
+      - schema:
+          type: string
+          format: ipv4
+        name: host
+        in: path
+        required: true
+        description: Server IP
+      - schema:
+          type: integer
+          maxLength: 65565
+        name: port
+        in: path
+        required: true
+        description: Server Port
+    get:
+      summary: Get a server
+      tags:
+        - Single Server
+      responses:
+        '200':
+          description: OK
+          headers: {}
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stale:
+                    type: boolean
+                    description: Whether we consider the data to be outdated
+                  hasHitPlayerCap:
+                    type: boolean
+                    description: 'Whether the server has hit the SA:MP limit for players. `players` will be incorrectly empty if this is `true`'
+                  address:
+                    type: string
+                    format: ipv4
+                  port:
+                    type: integer
+                  online:
+                    type: boolean
+                  hosted:
+                    type: boolean
+                  hostname:
+                    type: string
+                  gamemode:
+                    type: string
+                  language:
+                    type: string
+                  passworded:
+                    type: boolean
+                  maxPlayers:
+                    type: integer
+                  onlinePlayers:
+                    type: integer
+                  ping:
+                    type: integer
+                  lagcomp:
+                    type: boolean
+                  mapname:
+                    type: string
+                  version:
+                    type: string
+                  weather:
+                    type: string
+                  weburl:
+                    type: string
+                  worldtime:
+                    type: string
+                  country:
+                    type: string
+                  asn:
+                    type: string
+                  asnName:
+                    type: string
+                  players:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Player'
+                  batchPingedAt:
+                    type: string
+                required:
+                  - stale
+                  - hasHitPlayerCap
+                  - address
+                  - port
+                  - online
+                  - hosted
+                  - hostname
+                  - gamemode
+                  - language
+                  - passworded
+                  - maxPlayers
+                  - onlinePlayers
+                  - ping
+                  - lagcomp
+                  - mapname
+                  - version
+                  - weather
+                  - weburl
+                  - worldtime
+                  - country
+                  - asn
+                  - asnName
+                  - players
+                  - batchPingedAt
+              examples:
+                Example:
+                  value:
+                    stale: false
+                    hasHitPlayerCap: false
+                    address: 185.198.188.98
+                    port: 7777
+                    online: true
+                    hosted: false
+                    hostname: 'Mike''s Cops and Robbers [v1.9.1]'
+                    gamemode: Mike's Cops and Robbers
+                    language: English
+                    passworded: false
+                    maxPlayers: 150
+                    onlinePlayers: 24
+                    ping: 17
+                    lagcomp: true
+                    mapname: LV (LS next)
+                    version: 0.3.7-R2
+                    weather: null
+                    weburl: www.mikescnr.com
+                    worldtime: 'Thu 21:55'
+                    country: GB
+                    asn: '62240'
+                    asnName: Clouvider Limited
+                    players:
+                      - id: 29
+                        name: Aev
+                        ping: 77
+                        score: 28022
+                      - id: 30
+                        name: elbrayan
+                        ping: 247
+                        score: 857
+                      - id: 31
+                        name: 3more
+                        ping: 77
+                        score: 732
+                      - id: 32
+                        name: XxGAMERXx
+                        ping: 66
+                        score: 12675
+                      - id: 33
+                        name: '[SvT]aziz'
+                        ping: 103
+                        score: 4236
+                      - id: 34
+                        name: JacobS
+                        ping: 149
+                        score: 21439
+                      - id: 35
+                        name: Sarah_@
+                        ping: 112
+                        score: 1410
+                      - id: 36
+                        name: Dudesdog
+                        ping: 134
+                        score: 27507
+                      - id: 37
+                        name: LATINSAKI
+                        ping: 175
+                        score: 2824
+                      - id: 38
+                        name: Kampi
+                        ping: 87
+                        score: 27613
+                      - id: 39
+                        name: AndreZ94s
+                        ping: 409
+                        score: 1861
+                      - id: 40
+                        name: Miamin
+                        ping: 228
+                        score: 7072
+                      - id: 41
+                        name: CaptainAmerica
+                        ping: 118
+                        score: 2368
+                      - id: 42
+                        name: AnuelBrrrr
+                        ping: 227
+                        score: 1580
+                      - id: 43
+                        name: STD
+                        ping: 221
+                        score: 22360
+                      - id: 44
+                        name: CosmoS
+                        ping: 102
+                        score: 37305
+                      - id: 45
+                        name: Abella
+                        ping: 97
+                        score: 6289
+                      - id: 46
+                        name: cromilstealmypie
+                        ping: 227
+                        score: 49306
+                      - id: 47
+                        name: Ssd_Gamer
+                        ping: 222
+                        score: 1432
+                      - id: 48
+                        name: clarmarius
+                        ping: 66
+                        score: 2545
+                      - id: 49
+                        name: CrimsonFlavor
+                        ping: 71
+                        score: 37950
+                      - id: 50
+                        name: mody
+                        ping: 72
+                        score: 5096
+                      - id: 51
+                        name: 333zx333
+                        ping: 104
+                        score: 992
+                      - id: 58
+                        name: casian2018
+                        ping: 67
+                        score: 1879
+                    batchPingedAt: '2020-09-07T01:30:25.000Z'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  statusCode:
+                    type: number
+                  error:
+                    type: string
+                  message:
+                    type: string
+                required:
+                  - statusCode
+                  - error
+                  - message
+              examples:
+                Example 404:
+                  value:
+                    statusCode: 404
+                    error: Not Found
+                    message: Game server not tracked
+      operationId: 'get-server-host-:-port'
+      description: Returns the last data snapshot for a given server.
+  '/server/{host}:{port}/tsdb/ping':
+    parameters:
+      - schema:
+          type: string
+          format: ipv4
+        name: host
+        in: path
+        required: true
+        description: Server IP
+      - schema:
+          type: integer
+          maxLength: 65565
+        name: port
+        in: path
+        required: true
+        description: Server Port
+    get:
+      summary: 'Time Series: Ping'
+      tags:
+        - Single Server
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items: {}
+              examples:
+                example-1:
+                  value:
+                    - - '2020-09-06T23:00:00.000Z'
+                      - 17
+                    - - '2020-09-06T23:30:00.000Z'
+                      - 20
+                    - - '2020-09-07T00:00:00.000Z'
+                      - 19
+                    - - '2020-09-07T00:30:00.000Z'
+                      - 21
+                    - - '2020-09-07T01:00:00.000Z'
+                      - 19
+                    - - '2020-09-07T01:30:00.000Z'
+                      - 19
+      operationId: 'get-server-host-:-port-tsdb-ping'
+      description: |-
+        Return ping statistics for a server.
+
+        **Note**: This is relative to a single location. This data can really only be used to capture fluctuations in ping.
+      parameters:
+        - schema:
+            type: string
+            default: day
+            enum:
+              - day
+              - week
+              - month
+          in: query
+          name: period
+          description: Time period to return
+  '/server/{host}:{port}/tsdb/players':
+    parameters:
+      - schema:
+          type: string
+        name: host
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: port
+        in: path
+        required: true
+    get:
+      summary: 'Time Series: Players'
+      tags:
+        - Single Server
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: array
+                  items: {}
+              examples:
+                Example:
+                  value:
+                    - - '2020-09-06T23:00:00.000Z'
+                      - 28.5
+                    - - '2020-09-06T23:30:00.000Z'
+                      - 23
+                    - - '2020-09-07T00:00:00.000Z'
+                      - 20
+                    - - '2020-09-07T00:30:00.000Z'
+                      - 20
+                    - - '2020-09-07T01:00:00.000Z'
+                      - 23.3333
+                    - - '2020-09-07T01:30:00.000Z'
+                      - 25
+      operationId: 'get-server-host-:-port-tsdb-players'
+      description: Returns player count over time for a given server.
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - day
+              - week
+              - month
+            default: day
+          in: query
+          name: period
+          description: Time period to return
+        - schema:
+            type: string
+            enum:
+              - peak
+              - min
+              - average
+            default: average
+          in: query
+          name: type
+          description: Type of data to return
+components:
+  schemas:
+    LiveCountry:
+      title: LiveCountry
+      type: object
+      properties:
+        country:
+          type: string
+        count:
+          type: number
+      required:
+        - country
+        - count
+    LiveHost:
+      title: LiveHost
+      type: object
+      properties:
+        host:
+          type: string
+        count:
+          type: number
+      required:
+        - host
+        - count
+    Player:
+      title: Player
+      type: object
+      description: 'SA:MP player'
+      properties:
+        id:
+          type: number
+        name:
+          type: string
+        ping:
+          type: number
+        score:
+          type: number
+      required:
+        - id
+        - ping
+        - score
+tags:
+  - name: Live Statistics
+  - name: Single Server

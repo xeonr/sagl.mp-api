@@ -13,9 +13,6 @@ export class GameServer extends Model<GameServer> {
 	public ip: string;
 
 	@Column
-	public address: string;
-
-	@Column
 	public port: number;
 
 	@Column

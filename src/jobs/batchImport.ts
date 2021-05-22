@@ -1,44 +1,9 @@
-import { CountryRecord } from '@maxmind/geoip2-node';
-import { pick } from 'lodash';
-import { promisify } from 'util';
-import { gunzip } from 'zlib';
-
 import { db } from '../util/DB';
-import { lookupIP } from '../util/MaxMind';
 import { S3 } from '../util/S3';
 import { GameServer } from './../models/GameServer';
 import { GameServerPing } from './../models/GameServerPing';
 import { Logger } from './../util/Logger';
 import { IFileContents, IQueryValue } from './batchPing';
-
-const pGunzip = promisify(gunzip);
-
-export function getServerList(payload: IFileContents): IQueryValue[] {
-	if (!!payload.servers && Object.keys(payload.servers)?.length) {
-		return Object.values(payload.servers);
-	}
-
-	const servers = Object.keys(payload.success).map(i => ({
-		address: i,
-		...payload.success[i],
-	}));
-
-	return servers.concat(payload.failed.map(srv => {
-		const [address] = srv.split(':');
-		const { asn, city } = lookupIP(address);
-
-		return {
-			address: srv,
-			hosted: true,
-			payload: null,
-			ip: {
-				asn: pick(asn, ['autonomousSystemOrganization', 'autonomousSystemNumber']),
-				country: (<CountryRecord>city.country).isoCode,
-				city: (<CountryRecord>city.city).names ? (<CountryRecord>city.city).names.en : null,
-			},
-		};
-	}));
-}
 
 /**
  * Returns the timestamp of the last imported ping run.
@@ -54,12 +19,10 @@ export async function getLastExport(): Promise<Date> {
 }
 
 export function getGameServerPing(pingedAt: Date, server: IQueryValue): any {
-	const [address, port] = server.address.split(':');
-
 	if (!server.payload) {
 		return {
-			address,
-			port,
+			address: server.ip.address,
+			port: server.port,
 			hosted: server.hosted,
 			online: false,
 			batchPingedAt: pingedAt,
@@ -67,8 +30,8 @@ export function getGameServerPing(pingedAt: Date, server: IQueryValue): any {
 	}
 
 	return {
-		address,
-		port,
+		address: server.ip.address,
+		port: server.port,
 		online: true,
 		hosted: server.hosted,
 		hostname: server.payload.hostname,
@@ -126,14 +89,11 @@ const doStuff = (async () => {
 	const file = await S3.getFile(latestFile);
 
 	const fileAt = new Date(latestFile.split('/').reverse()[0].split('.json.gz')[0]);
-	const payload: IFileContents = JSON.parse((await pGunzip(file)).toString());
+	const payload: IFileContents = JSON.parse(file);
 
-	const servers = getServerList(payload);
 
 	// Create missing rows
-	await GameServer.bulkCreate(servers.map(server => {
-		const [address, port] = server.address.split(':');
-
+	await GameServer.bulkCreate(payload.servers.map(server => {
 		const meta = server.payload === null ? {
 			lastFailedPing: fileAt,
 		} : {
@@ -141,15 +101,14 @@ const doStuff = (async () => {
 			};
 
 		return {
-			ip: server.address,
+			ip: server.ip.address,
 			createdAt: fileAt,
-			address,
-			port,
+			port: server.port,
 			...meta,
 		};
 	}), { updateOnDuplicate: ['lastFailedPing', 'lastSuccessfulPing'] });
 
-	await GameServerPing.bulkCreate(servers.map(server => getGameServerPing(fileAt, server)));
+	await GameServerPing.bulkCreate(payload.servers.map(server => getGameServerPing(fileAt, server)));
 });
 
 (async () => {

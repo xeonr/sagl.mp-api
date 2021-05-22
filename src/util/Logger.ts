@@ -10,7 +10,7 @@ const logger = createLogger({
 	defaultMeta: { service: 'server-api' },
 });
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV === 'production') {
 	let date = new Date().toISOString();
 	const logFormat = format.printf((info): string => {
 		return `${date}-${info.level}: ${info.message} ${color(JSON.stringify(omit(info, ['level', 'message']), null, 4))}\n`;
@@ -19,6 +19,8 @@ if (process.env.NODE_ENV !== 'production') {
 	logger.add(new transports.Console({
 		format: format.combine(format.colorize(), logFormat),
 	}));
+} else {
+	logger.add(new transports.Console());
 }
 
 export const Logger = logger;

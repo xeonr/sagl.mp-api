@@ -4,8 +4,6 @@ import got from 'got';
 import { pick } from 'lodash';
 import PQueue from 'p-queue';
 import pRetry from 'p-retry';
-import { promisify } from 'util';
-import { gzip } from 'zlib';
 
 import { Logger } from '../util/Logger';
 import { lookupIP } from '../util/MaxMind';
@@ -14,24 +12,21 @@ import { S3 } from './../util/S3';
 
 import '../util/DB';
 
-const gzipPromise: (buf: Buffer) => Promise<Buffer> = promisify(gzip);
-
 export interface IQueryValue {
-	address: string;
+	hostname: string;
+	port: number;
 	hosted: boolean;
 	payload: QueryResponse;
-	ip: { asn: Asn; country: string; city: string | null };
+	ip: { address: string; asn: Asn; country: string; city: string | null };
 }
 
 export interface IFileContents {
-	servers?: { [key: string]: IQueryValue };
-	success?: { [key: string]: IQueryValue };
-	failed?: string[];
+	servers: IQueryValue[];
 }
 
 // tslint:disable no-http-string
 async function getServers(): Promise<{ servers: string[]; hosted: Set<string> }> {
-	const servers = await GameServer.findAll({}).then(i => i.map(e => `${e.address}:${e.port}`));
+	const servers = await GameServer.findAll({}).then(i => i.map(e => `${e.ip}:${e.port}`));
 	const internet: string = (await got.get('http://lists.sa-mp.com/0.3.7/internet')).body.trim();
 	const hosted: string = (await got.get('http://lists.sa-mp.com/0.3.7/hosted')).body.trim();
 
@@ -41,71 +36,106 @@ async function getServers(): Promise<{ servers: string[]; hosted: Set<string> }>
 	};
 }
 
-async function queryServer(ip: string, hosted: boolean, map: Map<string, IQueryValue>): Promise<void> {
-	const [address, port] = ip.split(':');
+function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
+	const [hostname, port] = address.split(':');
 
-	return Query({
-		host: address,
-		port: +port,
-	}).then(r => {
-		const { asn, city } = lookupIP(address);
-		map.set(ip, {
-			address: ip,
+	let asn: any = {
+		autonomousSystemOrganization: null,
+		autonomousSystemNumber: null,
+	};
+	let city: any = {
+		isoCode: null,
+		names: null,
+	};
+
+	try {
+		const res = lookupIP(hostname);
+		asn = res.asn;
+		city = res.city;
+	} catch(e) { }
+
+	return pRetry(() => {
+		return Query({ host: hostname, port: +port, timeout: 5000 })
+			.then((response) => {
+				Logger.info('Pinged server.', { id: `${hostname}:${port}` });
+
+				return {
+					hostname: address,
+					port: +port,
+					hosted,
+					payload: response,
+
+					ip: {
+						address: hostname,
+						asn: pick(asn, ['autonomousSystemOrganization', 'autonomousSystemNumber']),
+						country: (<CountryRecord>city.country).isoCode,
+						city: (<CountryRecord>city.city).names ? (<CountryRecord>city.city).names.en : null,
+					},
+				};
+			})
+	}, { retries: 3 })
+	.catch(() => {
+		Logger.warn('Failed to ping server.', { id: `${hostname}:${port}` });
+
+		return {
+			hostname: address,
+			port: +port,
 			hosted,
-			payload: r,
+			payload: null,
 			ip: {
+				address: hostname,
 				asn: pick(asn, ['autonomousSystemOrganization', 'autonomousSystemNumber']),
 				country: (<CountryRecord>city.country).isoCode,
 				city: (<CountryRecord>city.city).names ? (<CountryRecord>city.city).names.en : null,
 			},
-		});
+		}
 	});
 }
 
 (async () => {
 	const startAt = new Date();
 
+	// Fetch the server listing.
 	const { servers, hosted } = await getServers();
 	Logger.info('Fetched servers', { count: servers.length });
 
 	const queue = new PQueue({ concurrency: 20 });
-	const map = new Map<string, IQueryValue>();
+	const serverResults: IQueryValue[] = [];
 
-	for (const srv of servers) {
-		queue.add(() => pRetry(() => queryServer(srv, hosted.has(srv), map), { retries: 3 }).catch(() => {
-			const [address] = srv.split(':');
-			const { asn, city } = lookupIP(address);
-
-			map.set(srv, {
-				address: srv,
-				hosted: hosted.has(srv),
-				payload: null,
-				ip: {
-					asn: pick(asn, ['autonomousSystemOrganization', 'autonomousSystemNumber']),
-					country: (<CountryRecord>city.country).isoCode,
-					city: (<CountryRecord>city.city).names ? (<CountryRecord>city.city).names.en : null,
-				},
+	queue.addAll(servers.map(srv => () => {
+		return queryServer(srv, hosted.has(srv))
+			.then(i => {
+				serverResults.push(i);
+			})
+			.catch(() => {
+				return null;
 			});
-		}))
-			.catch(() => null);
-	}
+	}));
 
-	await queue.onEmpty();
+	await queue.onIdle();
 
-	Logger.warn('Retries failed.', { success: map.size, failed: servers.length - map.size });
-
-	const pl = Array.from(map).reduce((obj, [key, value]) => {
-		obj[key] = value;
-
-		return obj;
-	}, {});
+	Logger.warn('Data fetching complete.', {
+		success: serverResults.length,
+		failed: servers.length - serverResults.filter(i => !!i.payload).length,
+		tookMs: +new Date() - +startAt,
+	});
 
 	const payload = JSON.stringify({
-		servers: pl,
+		servers: serverResults,
 	});
 
 	const file: string =
 		`polls/${startAt.getFullYear()}/${startAt.getUTCMonth() + 1}/${startAt.getUTCDate()}/${startAt.toISOString()}.json.gz`;
-	await S3.upload(file, await gzipPromise(Buffer.from(payload)), 'application/json', 'gzip');
-	Logger.info('Uploaded to S3', { file });
+	await S3.upload(file, payload, 'application/json');
+
+	Logger.info('Uploaded to GCS', { file });
+
+	const hosts = serverResults.map(i => ({
+		ip: i.ip.address,
+		port: i.port,
+	}));
+
+	await GameServer.bulkCreate(hosts, {
+		ignoreDuplicates: true,
+	});
 })().catch((e) => { console.log(e); }); // tslint:disable-line

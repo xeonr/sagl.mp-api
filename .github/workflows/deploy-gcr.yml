@@ -1,0 +1,47 @@
+on:
+  push:
+    branches:
+    - main
+
+name: Build and Deploy SAGL Cloud API
+env:
+  REGION: europe-west1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        token: ${{ secrets.GH_ACCESS_TOKEN }}
+        submodules: recursive
+
+    - name: Setup Cloud SDK
+      uses: google-github-actions/setup-gcloud@v0.2.0
+      with:
+        project_id: xeonrio
+        service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+    - name: Authorize Docker push
+      run: gcloud auth configure-docker
+
+    - name: Build and Push Container
+      run: |-
+        docker build -t gcr.io/xeonrio/sagl/services/server-api:${{  github.run_number }} .
+        docker push gcr.io/xeonrio/sagl/services/server-api:${{  github.run_number }}
+
+    - name: Deploy SAGL
+      run: |-
+        gcloud run deploy sagl-server-api \
+          --region europe-west1 \
+          --image gcr.io/xeonrio/sagl/services/server-api:${{  github.run_number }} \
+          --platform "managed" \
+          --quiet
+
+    - name: Discord notification
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      uses: Ilshidur/action-discord@master
+      with:
+        args: '🚀 ${{github.actor}} successfully deployed the SA:GL Cloud API (Release `${{github.run_number}}`).'

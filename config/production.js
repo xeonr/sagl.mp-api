@@ -4,6 +4,7 @@ module.exports = {
 		"dialect": "mysql",
 		"username": process.env.MYSQL_DB_USER,
 		"password": process.env.MYSQL_DB_PASS,
+		"host": process.env.MYSQL_DB_HOST,
 	},
 	"storage": {
 		"bucket": "sagl-server-polls",

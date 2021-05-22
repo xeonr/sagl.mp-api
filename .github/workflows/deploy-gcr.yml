@@ -3,7 +3,7 @@ on:
     branches:
     - main
 
-name: Build and Deploy SAGL Cloud API
+name: Build and Deploy SAGL Server API
 env:
   REGION: europe-west1
 

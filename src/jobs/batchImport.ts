@@ -1,3 +1,5 @@
+import { v4 } from 'uuid';
+
 import { db } from '../util/DB';
 import { S3 } from '../util/S3';
 import { GameServer } from './../models/GameServer';
@@ -21,7 +23,8 @@ export async function getLastExport(): Promise<Date> {
 export function getGameServerPing(pingedAt: Date, server: IQueryValue): any {
 	if (!server.payload) {
 		return {
-			address: server.ip.address,
+			address: server.hostname,
+			ip: server.ip.address,
 			port: server.port,
 			hosted: server.hosted,
 			online: false,
@@ -30,7 +33,8 @@ export function getGameServerPing(pingedAt: Date, server: IQueryValue): any {
 	}
 
 	return {
-		address: server.ip.address,
+		address: server.hostname,
+		ip: server.ip.address,
 		port: server.port,
 		online: true,
 		hosted: server.hosted,
@@ -91,6 +95,7 @@ const doStuff = (async () => {
 	const fileAt = new Date(latestFile.split('/').reverse()[0].split('.json.gz')[0]);
 	const payload: IFileContents = JSON.parse(file);
 
+	const ids = await GameServerPing.bulkCreate(payload.servers.map(server => getGameServerPing(fileAt, server)));
 
 	// Create missing rows
 	await GameServer.bulkCreate(payload.servers.map(server => {
@@ -98,21 +103,27 @@ const doStuff = (async () => {
 			lastFailedPing: fileAt,
 		} : {
 				lastSuccessfulPing: fileAt,
+				lastPingId: ids.find(i => i.address === server.hostname).id,
 			};
 
 		return {
 			ip: server.ip.address,
+			address: server.hostname,
 			createdAt: fileAt,
 			port: server.port,
 			...meta,
 		};
-	}), { updateOnDuplicate: ['lastFailedPing', 'lastSuccessfulPing'] });
-
-	await GameServerPing.bulkCreate(payload.servers.map(server => getGameServerPing(fileAt, server)));
+	}), { updateOnDuplicate: ['lastFailedPing', 'lastSuccessfulPing', 'lastPingId'] });
 });
 
 (async () => {
-	await doStuff();
+	while (true) {
+		await doStuff();
+
+		await new Promise(res => {
+			setTimeout(res, 100);
+		});
+	}
 })()
 	.catch((e: Error) => {
 		Logger.error('Error occurred with import', e);

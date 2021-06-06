@@ -131,6 +131,7 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 	Logger.info('Uploaded to GCS', { file });
 
 	const hosts = serverResults.map(i => ({
+		address: i.hostname,
 		ip: i.ip.address,
 		port: i.port,
 	}));

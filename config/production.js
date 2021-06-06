@@ -11,6 +11,7 @@ module.exports = {
 		"auth": undefined
 	},
 	"web": {
+		"publicUrl": "https://server-api.sagl.app",
 		"host": "0.0.0.0",
 		"port": process.env.PORT,
 	}

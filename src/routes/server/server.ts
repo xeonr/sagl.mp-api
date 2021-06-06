@@ -1,20 +1,14 @@
 import { notFound } from '@hapi/boom';
 import { Lifecycle, Request, Server } from '@hapi/hapi';
 import Joi from 'joi';
-import { omit } from 'lodash';
 import moment, { Moment } from 'moment';
 import { Op } from 'sequelize';
 import { Sequelize } from 'sequelize-typescript';
 
 import { GameServerPing } from '../../models/GameServerPing';
+import { GameServer } from './../../models/GameServer';
 import { RouterFn } from './../../util/Types';
-
-/**
- * Check if a date is within the last 30 mins..
- */
-const isConsideredOnline = (date: Date) => {
-	return date >= new Date(+new Date() - 1000 * 60 * 30);
-};
+import { transformGameServer } from './servers';
 
 const roundTo30Minutes = (date: Moment): Moment => {
 	return moment(date)
@@ -26,7 +20,7 @@ const roundTo30Minutes = (date: Moment): Moment => {
 export const routes: RouterFn = (router: Server): void => {
 	router.route({
 		method: 'GET',
-		path: '/server/{ip}:{port}',
+		path: '/servers/{ip}:{port}',
 		options: {
 			validate: {
 				params: {
@@ -36,29 +30,35 @@ export const routes: RouterFn = (router: Server): void => {
 			},
 		},
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
-			return GameServerPing.findOne({
+			return GameServer.findOne({
+				attributes: ['id', 'supporter', 'createdAt'],
 				where: {
-					address: request.params.ip,
+					ip: request.params.ip,
 					port: request.params.port,
 				},
-				order: [['batchPingedAt', 'desc']],
-			}).then(r => {
+				include: [{
+					model: GameServerPing,
+					as: 'latestPing',
+					attributes: [
+						'address', 'hostname', 'gamemode', 'language',
+						'passworded', 'onlinePlayers', 'maxPlayers',
+						'lagcomp', 'mapname', 'version', 'weather', 'worldtime',
+						'asn', 'asnName', 'country', 'hosted', 'players', 'batchPingedAt',
+					],
+				}],
+			}).then(async r => {
 				if (!r) {
 					throw notFound('Game server not tracked');
 				}
 
-				return {
-					stale: !isConsideredOnline(r.batchPingedAt),
-					hasHitPlayerCap: r.onlinePlayers >= 100,
-					...omit(r.toJSON(), ['id', 'createdAt', 'updatedAt']),
-				};
+				return transformGameServer(r);
 			});
 		},
 	});
 
 	router.route({
 		method: 'GET',
-		path: '/server/{ip}:{port}/tsdb/players',
+		path: '/servers/{ip}:{port}/tsdb/players',
 		options: {
 			validate: {
 				params: {
@@ -77,7 +77,7 @@ export const routes: RouterFn = (router: Server): void => {
 			return GameServerPing.findAll({
 				where: {
 					online: true,
-					address: request.params.ip,
+					ip: request.params.ip,
 					port: request.params.port,
 					batchPingedAt: { [Op.gte]: date },
 				},
@@ -103,7 +103,7 @@ export const routes: RouterFn = (router: Server): void => {
 
 	router.route({
 		method: 'GET',
-		path: '/server/{ip}:{port}/tsdb/ping',
+		path: '/servers/{ip}:{port}/tsdb/ping',
 		options: {
 			validate: {
 				params: {
@@ -121,7 +121,7 @@ export const routes: RouterFn = (router: Server): void => {
 			return GameServerPing.findAll({
 				where: {
 					online: true,
-					address: request.params.ip,
+					ip: request.params.ip,
 					port: request.params.port,
 					batchPingedAt: { [Op.gte]: date },
 				},

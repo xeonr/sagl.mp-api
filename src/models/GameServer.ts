@@ -1,11 +1,17 @@
-import { Column, IsUUID, Model, PrimaryKey, Table, Unique } from 'sequelize-typescript';
-import { v4 } from 'uuid';
+import { Column, DataType, Default, HasMany, HasOne, Index, Model, PrimaryKey, Table, Unique } from 'sequelize-typescript';
+
+import { GameServerPing } from './GameServerPing';
 
 @Table
 export class GameServer extends Model<GameServer> {
-	@IsUUID(4)
+	@Unique
+	@Default(DataType.UUIDV4)
+	@Column(DataType.UUID)
+	public id: string;
+
 	@Column
-	public id: string = v4();
+	@Index
+	public address: string;
 
 	@PrimaryKey
 	@Unique
@@ -20,4 +26,51 @@ export class GameServer extends Model<GameServer> {
 
 	@Column
 	public lastFailedPing: Date;
+
+	@Column({
+		defaultValue: false,
+	})
+	public supporter: boolean;
+
+	// Assumed properties
+	@Column
+	public assumedIcon: string;
+
+	@Column
+	public assumedDiscordGuild: string;
+
+	@Column(DataType.JSON)
+	public assumedSocials: object;
+
+	// Configurable Properties
+	@Column
+	public userDiscordGuild: string;
+
+	@Column
+	public userDiscordInvite: string;
+
+	@Column
+	public userIcon: string;
+
+	@Column(DataType.JSON)
+	public userSocials: object;
+
+	@Column
+	public lastPingId: string;
+
+	@HasMany(() => GameServerPing, {
+		foreignKey: 'address',
+		sourceKey: 'address',
+		as: 'ping',
+		constraints: false,
+	})
+	public gameServer: GameServerPing;
+
+	@HasOne(() => GameServerPing, {
+		foreignKey: 'id',
+		sourceKey: 'lastPingId',
+		constraints: false,
+		as: 'latestPing',
+	})
+	public latestPing: GameServerPing;
 }

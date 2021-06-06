@@ -67,7 +67,7 @@ paths:
                       count: 3
       operationId: get-statistics-host
       description: |-
-        Returns the global hosting provider distribution for all SAMP servers. 
+        Returns the global hosting provider distribution for all SAMP servers.
 
 
         This is only for servers at the current time, not historical.
@@ -157,7 +157,7 @@ paths:
                     globalFullness: 13.104425227815716
       operationId: get-statistics-current-players
       description: Returns combined player count details for all servers we track
-  '/server/{host}:{port}':
+  '/servers/{host}:{port}':
     parameters:
       - schema:
           type: string
@@ -175,8 +175,6 @@ paths:
         description: Server Port
     get:
       summary: Get a server
-      tags:
-        - Single Server
       responses:
         '200':
           description: OK
@@ -184,209 +182,644 @@ paths:
           content:
             application/json:
               schema:
+                description: ''
                 type: object
+                x-examples:
+                  example-1:
+                    id: 56bc3c60-7fca-4a5d-aab0-e36583b1dade
+                    address: '185.198.188.98:7777'
+                    name: 'Mike''s Cops and Robbers [v1.10.6 R1]'
+                    isSupporter: true
+                    isHosted: true
+                    isPassworded: false
+                    players:
+                      current: 60
+                      max: 150
+                      hitSAMPLimit: false
+                      online:
+                        - id: 0
+                          name: 'L[3]VII.1337'
+                          ping: 134
+                          score: 33434
+                        - id: 1
+                          name: Sarke
+                          ping: 42
+                          score: 3086
+                        - id: 2
+                          name: Nokia
+                          ping: 47
+                          score: 175
+                        - id: 3
+                          name: MEMON
+                          ping: 69
+                          score: 3636
+                        - id: 4
+                          name: ninco
+                          ping: 155
+                          score: 16325
+                        - id: 6
+                          name: zzom1432@gmail.com
+                          ping: 74
+                          score: 1216
+                        - id: 7
+                          name: xv.
+                          ping: 212
+                          score: 19492
+                        - id: 8
+                          name: Zymka_Skreplis
+                          ping: 74
+                          score: 13186
+                        - id: 9
+                          name: sikisik
+                          ping: 74
+                          score: 1034
+                        - id: 10
+                          name: oSKAR_rOCKEFELLER
+                          ping: 298
+                          score: 12237
+                        - id: 11
+                          name: George_winston
+                          ping: 271
+                          score: 2561
+                        - id: 12
+                          name: phat123
+                          ping: 261
+                          score: 905
+                        - id: 25
+                          name: franc_
+                          ping: 74
+                          score: 26647
+                        - id: 26
+                          name: mr.joe
+                          ping: 74
+                          score: 21965
+                        - id: 46
+                          name: Marko_Stojkovic
+                          ping: 58
+                          score: 2075
+                        - id: 47
+                          name: n1nt3nd0
+                          ping: 63
+                          score: 4447
+                        - id: 48
+                          name: zopz
+                          ping: 95
+                          score: 841
+                        - id: 49
+                          name: binho21
+                          ping: 250
+                          score: 10749
+                        - id: 50
+                          name: LAMAR
+                          ping: 261
+                          score: 2253
+                        - id: 51
+                          name: Strk12
+                          ping: 80
+                          score: 18947
+                        - id: 52
+                          name: JEXRA1Q
+                          ping: 138
+                          score: 828
+                        - id: 53
+                          name: Scarface_
+                          ping: 292
+                          score: 10388
+                        - id: 54
+                          name: vukbro
+                          ping: 100
+                          score: 173
+                        - id: 55
+                          name: GOFOX2019
+                          ping: 96
+                          score: 999
+                        - id: 56
+                          name: koki
+                          ping: 222
+                          score: 4397
+                        - id: 57
+                          name: AzRaeL_Up_On_U
+                          ping: 153
+                          score: 2049
+                        - id: 58
+                          name: jokur
+                          ping: 245
+                          score: 4855
+                        - id: 59
+                          name: '[RA]Prasun'
+                          ping: 202
+                          score: 47121
+                        - id: 60
+                          name: nick.
+                          ping: 37
+                          score: 10839
+                        - id: 61
+                          name: juan_cane
+                          ping: 191
+                          score: 6389
+                        - id: 62
+                          name: Outlaw_Dude
+                          ping: 69
+                          score: 11860
+                        - id: 63
+                          name: MiceOP
+                          ping: 146
+                          score: 11538
+                        - id: 64
+                          name: LordPaulus
+                          ping: 45
+                          score: 530
+                        - id: 65
+                          name: arj
+                          ping: 255
+                          score: 7836
+                        - id: 67
+                          name: ooty
+                          ping: 234
+                          score: 553
+                        - id: 69
+                          name: Choriflan_Aron
+                          ping: 260
+                          score: 203
+                        - id: 70
+                          name: Charlie.1337
+                          ping: 53
+                          score: 50493
+                        - id: 71
+                          name: Balla1
+                          ping: 264
+                          score: 40859
+                        - id: 72
+                          name: Fierycrow
+                          ping: 40
+                          score: 1010
+                        - id: 73
+                          name: gogo2132
+                          ping: 25
+                          score: 3875
+                        - id: 76
+                          name: LogFile
+                          ping: 303
+                          score: 3603
+                        - id: 77
+                          name: JhonyJoker
+                          ping: 58
+                          score: 8207
+                        - id: 78
+                          name: abokees
+                          ping: 63
+                          score: 446
+                        - id: 79
+                          name: HaMoDa
+                          ping: 111
+                          score: 199
+                        - id: 80
+                          name: when
+                          ping: 217
+                          score: 147
+                        - id: 81
+                          name: Lean
+                          ping: 54
+                          score: 116
+                        - id: 82
+                          name: KARLOS_VICENTE
+                          ping: 300
+                          score: 158
+                        - id: 83
+                          name: '[77]Sid'
+                          ping: 149
+                          score: 34329
+                        - id: 87
+                          name: jae
+                          ping: 122
+                          score: 259
+                        - id: 89
+                          name: '[B]ahzi'
+                          ping: 31
+                          score: 22145
+                        - id: 90
+                          name: H.36.100
+                          ping: 68
+                          score: 1151
+                        - id: 91
+                          name: '[NC]Arun'
+                          ping: 249
+                          score: 13969
+                        - id: 93
+                          name: FrenchKiss
+                          ping: 47
+                          score: 8899
+                        - id: 94
+                          name: YUNGGRAVY
+                          ping: 149
+                          score: 1068
+                        - id: 96
+                          name: Saric_Jopa
+                          ping: 52
+                          score: 4911
+                        - id: 97
+                          name: ranja
+                          ping: 160
+                          score: 949
+                        - id: 100
+                          name: JIAWEH
+                          ping: 254
+                          score: 5138
+                        - id: 101
+                          name: KayyyP
+                          ping: 239
+                          score: 10072
+                        - id: 104
+                          name: ShwarmX
+                          ping: 206
+                          score: 291
+                        - id: 107
+                          name: Danilo_Trajkovic
+                          ping: 58
+                          score: 11777
+                    game:
+                      language: English
+                      gamemode: Mike's Cops and Robbers
+                      lagcomp: 'On'
+                      mapname: LV (LS next)
+                      version: 0.3.7-R2 | 1.10.6 R1
+                      weather: Cloudy
+                      worldtime: 'Tue 5:55'
+                    network:
+                      country: GB
+                      asn: 62240
+                      asnName: Clouvider Limited
+                    isOnline: false
+                    snapshotAt: '2021-06-06T17:10:10.000Z'
                 properties:
-                  stale:
-                    type: boolean
-                    description: Whether we consider the data to be outdated
-                  hasHitPlayerCap:
-                    type: boolean
-                    description: 'Whether the server has hit the SA:MP limit for players. `players` will be incorrectly empty if this is `true`'
+                  id:
+                    type: string
+                    minLength: 1
                   address:
                     type: string
-                    format: ipv4
-                  port:
-                    type: integer
-                  online:
+                    minLength: 1
+                  name:
+                    type: string
+                    minLength: 1
+                  isSupporter:
                     type: boolean
-                  hosted:
+                  isHosted:
                     type: boolean
-                  hostname:
-                    type: string
-                  gamemode:
-                    type: string
-                  language:
-                    type: string
-                  passworded:
+                  isPassworded:
                     type: boolean
-                  maxPlayers:
-                    type: integer
-                  onlinePlayers:
-                    type: integer
-                  ping:
-                    type: integer
-                  lagcomp:
-                    type: boolean
-                  mapname:
-                    type: string
-                  version:
-                    type: string
-                  weather:
-                    type: string
-                  weburl:
-                    type: string
-                  worldtime:
-                    type: string
-                  country:
-                    type: string
-                  asn:
-                    type: string
-                  asnName:
-                    type: string
                   players:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/Player'
-                  batchPingedAt:
+                    type: object
+                    required:
+                      - current
+                      - max
+                      - hitSAMPLimit
+                      - online
+                    properties:
+                      current:
+                        type: number
+                      max:
+                        type: number
+                      hitSAMPLimit:
+                        type: boolean
+                        description: 'Whether the server has hit the SA:MP limit for players. `players` will be incorrectly empty if this is `true`'
+                      online:
+                        type: array
+                        uniqueItems: true
+                        minItems: 1
+                        items:
+                          $ref: '#/components/schemas/Player'
+                  game:
+                    type: object
+                    required:
+                      - language
+                      - gamemode
+                      - lagcomp
+                      - mapname
+                      - version
+                      - weather
+                      - worldtime
+                    properties:
+                      language:
+                        type: string
+                        minLength: 1
+                      gamemode:
+                        type: string
+                        minLength: 1
+                      lagcomp:
+                        type: string
+                        minLength: 1
+                      mapname:
+                        type: string
+                        minLength: 1
+                      version:
+                        type: string
+                        minLength: 1
+                      weather:
+                        type: string
+                        minLength: 1
+                      worldtime:
+                        type: string
+                        minLength: 1
+                  network:
+                    type: object
+                    required:
+                      - country
+                      - asn
+                      - asnName
+                    properties:
+                      country:
+                        type: string
+                        minLength: 1
+                      asn:
+                        type: number
+                      asnName:
+                        type: string
+                        minLength: 1
+                  isOnline:
+                    type: boolean
+                  snapshotAt:
                     type: string
+                    minLength: 1
                 required:
-                  - stale
-                  - hasHitPlayerCap
+                  - id
                   - address
-                  - port
-                  - online
-                  - hosted
-                  - hostname
-                  - gamemode
-                  - language
-                  - passworded
-                  - maxPlayers
-                  - onlinePlayers
-                  - ping
-                  - lagcomp
-                  - mapname
-                  - version
-                  - weather
-                  - weburl
-                  - worldtime
-                  - country
-                  - asn
-                  - asnName
+                  - name
+                  - isSupporter
+                  - isHosted
+                  - isPassworded
                   - players
-                  - batchPingedAt
+                  - game
+                  - network
+                  - isOnline
+                  - snapshotAt
               examples:
                 Example:
                   value:
-                    stale: false
-                    hasHitPlayerCap: false
-                    address: 185.198.188.98
-                    port: 7777
-                    online: true
-                    hosted: false
-                    hostname: 'Mike''s Cops and Robbers [v1.9.1]'
-                    gamemode: Mike's Cops and Robbers
-                    language: English
-                    passworded: false
-                    maxPlayers: 150
-                    onlinePlayers: 24
-                    ping: 17
-                    lagcomp: true
-                    mapname: LV (LS next)
-                    version: 0.3.7-R2
-                    weather: null
-                    weburl: www.mikescnr.com
-                    worldtime: 'Thu 21:55'
-                    country: GB
-                    asn: '62240'
-                    asnName: Clouvider Limited
+                    id: 56bc3c60-7fca-4a5d-aab0-e36583b1dade
+                    address: '185.198.188.98:7777'
+                    name: 'Mike''s Cops and Robbers [v1.10.6 R1]'
+                    isSupporter: true
+                    isHosted: true
+                    isPassworded: false
                     players:
-                      - id: 29
-                        name: Aev
-                        ping: 77
-                        score: 28022
-                      - id: 30
-                        name: elbrayan
-                        ping: 247
-                        score: 857
-                      - id: 31
-                        name: 3more
-                        ping: 77
-                        score: 732
-                      - id: 32
-                        name: XxGAMERXx
-                        ping: 66
-                        score: 12675
-                      - id: 33
-                        name: '[SvT]aziz'
-                        ping: 103
-                        score: 4236
-                      - id: 34
-                        name: JacobS
-                        ping: 149
-                        score: 21439
-                      - id: 35
-                        name: Sarah_@
-                        ping: 112
-                        score: 1410
-                      - id: 36
-                        name: Dudesdog
-                        ping: 134
-                        score: 27507
-                      - id: 37
-                        name: LATINSAKI
-                        ping: 175
-                        score: 2824
-                      - id: 38
-                        name: Kampi
-                        ping: 87
-                        score: 27613
-                      - id: 39
-                        name: AndreZ94s
-                        ping: 409
-                        score: 1861
-                      - id: 40
-                        name: Miamin
-                        ping: 228
-                        score: 7072
-                      - id: 41
-                        name: CaptainAmerica
-                        ping: 118
-                        score: 2368
-                      - id: 42
-                        name: AnuelBrrrr
-                        ping: 227
-                        score: 1580
-                      - id: 43
-                        name: STD
-                        ping: 221
-                        score: 22360
-                      - id: 44
-                        name: CosmoS
-                        ping: 102
-                        score: 37305
-                      - id: 45
-                        name: Abella
-                        ping: 97
-                        score: 6289
-                      - id: 46
-                        name: cromilstealmypie
-                        ping: 227
-                        score: 49306
-                      - id: 47
-                        name: Ssd_Gamer
-                        ping: 222
-                        score: 1432
-                      - id: 48
-                        name: clarmarius
-                        ping: 66
-                        score: 2545
-                      - id: 49
-                        name: CrimsonFlavor
-                        ping: 71
-                        score: 37950
-                      - id: 50
-                        name: mody
-                        ping: 72
-                        score: 5096
-                      - id: 51
-                        name: 333zx333
-                        ping: 104
-                        score: 992
-                      - id: 58
-                        name: casian2018
-                        ping: 67
-                        score: 1879
-                    batchPingedAt: '2020-09-07T01:30:25.000Z'
+                      current: 60
+                      max: 150
+                      hitSAMPLimit: false
+                      online:
+                        - id: 0
+                          name: 'L[3]VII.1337'
+                          ping: 134
+                          score: 33434
+                        - id: 1
+                          name: Sarke
+                          ping: 42
+                          score: 3086
+                        - id: 2
+                          name: Nokia
+                          ping: 47
+                          score: 175
+                        - id: 3
+                          name: MEMON
+                          ping: 69
+                          score: 3636
+                        - id: 4
+                          name: ninco
+                          ping: 155
+                          score: 16325
+                        - id: 6
+                          name: zzom1432@gmail.com
+                          ping: 74
+                          score: 1216
+                        - id: 7
+                          name: xv.
+                          ping: 212
+                          score: 19492
+                        - id: 8
+                          name: Zymka_Skreplis
+                          ping: 74
+                          score: 13186
+                        - id: 9
+                          name: sikisik
+                          ping: 74
+                          score: 1034
+                        - id: 10
+                          name: oSKAR_rOCKEFELLER
+                          ping: 298
+                          score: 12237
+                        - id: 11
+                          name: George_winston
+                          ping: 271
+                          score: 2561
+                        - id: 12
+                          name: phat123
+                          ping: 261
+                          score: 905
+                        - id: 25
+                          name: franc_
+                          ping: 74
+                          score: 26647
+                        - id: 26
+                          name: mr.joe
+                          ping: 74
+                          score: 21965
+                        - id: 46
+                          name: Marko_Stojkovic
+                          ping: 58
+                          score: 2075
+                        - id: 47
+                          name: n1nt3nd0
+                          ping: 63
+                          score: 4447
+                        - id: 48
+                          name: zopz
+                          ping: 95
+                          score: 841
+                        - id: 49
+                          name: binho21
+                          ping: 250
+                          score: 10749
+                        - id: 50
+                          name: LAMAR
+                          ping: 261
+                          score: 2253
+                        - id: 51
+                          name: Strk12
+                          ping: 80
+                          score: 18947
+                        - id: 52
+                          name: JEXRA1Q
+                          ping: 138
+                          score: 828
+                        - id: 53
+                          name: Scarface_
+                          ping: 292
+                          score: 10388
+                        - id: 54
+                          name: vukbro
+                          ping: 100
+                          score: 173
+                        - id: 55
+                          name: GOFOX2019
+                          ping: 96
+                          score: 999
+                        - id: 56
+                          name: koki
+                          ping: 222
+                          score: 4397
+                        - id: 57
+                          name: AzRaeL_Up_On_U
+                          ping: 153
+                          score: 2049
+                        - id: 58
+                          name: jokur
+                          ping: 245
+                          score: 4855
+                        - id: 59
+                          name: '[RA]Prasun'
+                          ping: 202
+                          score: 47121
+                        - id: 60
+                          name: nick.
+                          ping: 37
+                          score: 10839
+                        - id: 61
+                          name: juan_cane
+                          ping: 191
+                          score: 6389
+                        - id: 62
+                          name: Outlaw_Dude
+                          ping: 69
+                          score: 11860
+                        - id: 63
+                          name: MiceOP
+                          ping: 146
+                          score: 11538
+                        - id: 64
+                          name: LordPaulus
+                          ping: 45
+                          score: 530
+                        - id: 65
+                          name: arj
+                          ping: 255
+                          score: 7836
+                        - id: 67
+                          name: ooty
+                          ping: 234
+                          score: 553
+                        - id: 69
+                          name: Choriflan_Aron
+                          ping: 260
+                          score: 203
+                        - id: 70
+                          name: Charlie.1337
+                          ping: 53
+                          score: 50493
+                        - id: 71
+                          name: Balla1
+                          ping: 264
+                          score: 40859
+                        - id: 72
+                          name: Fierycrow
+                          ping: 40
+                          score: 1010
+                        - id: 73
+                          name: gogo2132
+                          ping: 25
+                          score: 3875
+                        - id: 76
+                          name: LogFile
+                          ping: 303
+                          score: 3603
+                        - id: 77
+                          name: JhonyJoker
+                          ping: 58
+                          score: 8207
+                        - id: 78
+                          name: abokees
+                          ping: 63
+                          score: 446
+                        - id: 79
+                          name: HaMoDa
+                          ping: 111
+                          score: 199
+                        - id: 80
+                          name: when
+                          ping: 217
+                          score: 147
+                        - id: 81
+                          name: Lean
+                          ping: 54
+                          score: 116
+                        - id: 82
+                          name: KARLOS_VICENTE
+                          ping: 300
+                          score: 158
+                        - id: 83
+                          name: '[77]Sid'
+                          ping: 149
+                          score: 34329
+                        - id: 87
+                          name: jae
+                          ping: 122
+                          score: 259
+                        - id: 89
+                          name: '[B]ahzi'
+                          ping: 31
+                          score: 22145
+                        - id: 90
+                          name: H.36.100
+                          ping: 68
+                          score: 1151
+                        - id: 91
+                          name: '[NC]Arun'
+                          ping: 249
+                          score: 13969
+                        - id: 93
+                          name: FrenchKiss
+                          ping: 47
+                          score: 8899
+                        - id: 94
+                          name: YUNGGRAVY
+                          ping: 149
+                          score: 1068
+                        - id: 96
+                          name: Saric_Jopa
+                          ping: 52
+                          score: 4911
+                        - id: 97
+                          name: ranja
+                          ping: 160
+                          score: 949
+                        - id: 100
+                          name: JIAWEH
+                          ping: 254
+                          score: 5138
+                        - id: 101
+                          name: KayyyP
+                          ping: 239
+                          score: 10072
+                        - id: 104
+                          name: ShwarmX
+                          ping: 206
+                          score: 291
+                        - id: 107
+                          name: Danilo_Trajkovic
+                          ping: 58
+                          score: 11777
+                    game:
+                      language: English
+                      gamemode: Mike's Cops and Robbers
+                      lagcomp: 'On'
+                      mapname: LV (LS next)
+                      version: 0.3.7-R2 | 1.10.6 R1
+                      weather: Cloudy
+                      worldtime: 'Tue 5:55'
+                    network:
+                      country: GB
+                      asn: 62240
+                      asnName: Clouvider Limited
+                    isOnline: false
+                    snapshotAt: '2021-06-06T17:10:10.000Z'
         '404':
           description: Not Found
           content:
@@ -412,7 +845,9 @@ paths:
                     message: Game server not tracked
       operationId: 'get-server-host-:-port'
       description: Returns the last data snapshot for a given server.
-  '/server/{host}:{port}/tsdb/ping':
+      tags:
+        - Servers
+  '/servers/{host}:{port}/tsdb/ping':
     parameters:
       - schema:
           type: string
@@ -430,8 +865,6 @@ paths:
         description: Server Port
     get:
       summary: 'Time Series: Ping'
-      tags:
-        - Single Server
       responses:
         '200':
           description: OK
@@ -473,7 +906,9 @@ paths:
           in: query
           name: period
           description: Time period to return
-  '/server/{host}:{port}/tsdb/players':
+      tags:
+        - Servers
+  '/servers/{host}:{port}/tsdb/players':
     parameters:
       - schema:
           type: string
@@ -487,8 +922,6 @@ paths:
         required: true
     get:
       summary: 'Time Series: Players'
-      tags:
-        - Single Server
       responses:
         '200':
           description: OK
@@ -537,6 +970,333 @@ paths:
           in: query
           name: type
           description: Type of data to return
+      tags:
+        - Servers
+  /servers:
+    get:
+      summary: List all servers
+      tags:
+        - Servers
+      responses:
+        '200':
+          description: OK
+          headers:
+            link:
+              schema:
+                type: string
+                example: '<https://server-api.sagl.app/v1/servers?after=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJxdWVyeSI6eyJuZXR3b3JrLmNvdW50cnkiOiJmciIsImxpbWl0Ijo1MCwib3JkZXIiOiJjcmVhdGVkQXQ6ZGVzYyJ9LCJsYXN0SWQiOiIwNmQyMDY2ZS0zYzYyLTRiZjYtYTU3MS0yYTQ1MmRjODFmOWEiLCJsYXN0UGluZ2VkQXQiOiIyMDIxLTA2LTA2VDE3OjEwOjEwLjAwMFoiLCJvZmZzZXQiOjQ2LCJpYXQiOjE2MjMwMDIyNTd9.w3VZhypKZ5kcMS8cSloZTPwh7mmDaR3BFsyXf8QA80w>; rel="next'
+              description: Pagination Cursor. This will provide a link for the next request if there are more results.
+          content:
+            application/json:
+              schema:
+                type: array
+                description: ''
+                uniqueItems: true
+                x-examples:
+                  example-1:
+                    - id: 597304ac-91a4-47f0-a36b-07418b262bab
+                      address: '51.89.93.152:7777'
+                      name: Zombie Apocalipsis TDM - BOTs/NPC
+                      isSupporter: false
+                      isHosted: true
+                      isPassworded: false
+                      players:
+                        current: 7
+                        max: 500
+                        hitSAMPLimit: false
+                      game:
+                        language: ENG / ESP
+                        gamemode: Zombies/Survival/TDM/Fac
+                        lagcomp: 'On'
+                        mapname: LS - Zombie
+                        version: 0.3.7-R2
+                        weather: '10'
+                        worldtime: '12:00'
+                      network:
+                        country: GB
+                        asn: 16276
+                        asnName: OVH SAS
+                      isOnline: false
+                    - id: 56bc3c60-7fca-4a5d-aab0-e36583b1dade
+                      address: '185.198.188.98:7777'
+                      name: 'Mike''s Cops and Robbers [v1.10.6 R1]'
+                      isSupporter: true
+                      isHosted: true
+                      isPassworded: false
+                      players:
+                        current: 60
+                        max: 150
+                        hitSAMPLimit: false
+                      game:
+                        language: English
+                        gamemode: Mike's Cops and Robbers
+                        lagcomp: 'On'
+                        mapname: LV (LS next)
+                        version: 0.3.7-R2 | 1.10.6 R1
+                        weather: Cloudy
+                        worldtime: 'Tue 5:55'
+                      network:
+                        country: GB
+                        asn: 62240
+                        asnName: Clouvider Limited
+                      isOnline: false
+                minItems: 0
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      minLength: 1
+                    address:
+                      type: string
+                      minLength: 1
+                    name:
+                      type: string
+                      minLength: 1
+                    isSupporter:
+                      type: boolean
+                    isHosted:
+                      type: boolean
+                    isPassworded:
+                      type: boolean
+                    players:
+                      type: object
+                      required:
+                        - current
+                        - max
+                        - hitSAMPLimit
+                      properties:
+                        current:
+                          type: number
+                        max:
+                          type: number
+                        hitSAMPLimit:
+                          type: boolean
+                    game:
+                      type: object
+                      required:
+                        - language
+                        - gamemode
+                        - lagcomp
+                        - mapname
+                        - version
+                        - weather
+                        - worldtime
+                      properties:
+                        language:
+                          type: string
+                          minLength: 1
+                        gamemode:
+                          type: string
+                          minLength: 1
+                        lagcomp:
+                          type: string
+                          minLength: 1
+                        mapname:
+                          type: string
+                          minLength: 1
+                        version:
+                          type: string
+                          minLength: 1
+                        weather:
+                          type: string
+                          minLength: 1
+                        worldtime:
+                          type: string
+                          minLength: 1
+                    network:
+                      type: object
+                      required:
+                        - country
+                        - asn
+                        - asnName
+                      properties:
+                        country:
+                          type: string
+                          minLength: 1
+                        asn:
+                          type: number
+                        asnName:
+                          type: string
+                          minLength: 1
+                    isOnline:
+                      type: boolean
+                  required:
+                    - id
+                    - address
+                    - name
+                    - isSupporter
+                    - isHosted
+                    - isPassworded
+                    - players
+                    - game
+                    - network
+                    - isOnline
+              examples:
+                example-1:
+                  value:
+                    - id: 597304ac-91a4-47f0-a36b-07418b262bab
+                      address: '51.89.93.152:7777'
+                      name: Zombie Apocalipsis TDM - BOTs/NPC
+                      isSupporter: false
+                      isHosted: true
+                      isPassworded: false
+                      players:
+                        current: 7
+                        max: 500
+                        hitSAMPLimit: false
+                      game:
+                        language: ENG / ESP
+                        gamemode: Zombies/Survival/TDM/Fac
+                        lagcomp: 'On'
+                        mapname: LS - Zombie
+                        version: 0.3.7-R2
+                        weather: '10'
+                        worldtime: '12:00'
+                      network:
+                        country: GB
+                        asn: 16276
+                        asnName: OVH SAS
+                      isOnline: false
+                    - id: 56bc3c60-7fca-4a5d-aab0-e36583b1dade
+                      address: '185.198.188.98:7777'
+                      name: 'Mike''s Cops and Robbers [v1.10.6 R1]'
+                      isSupporter: true
+                      isHosted: true
+                      isPassworded: false
+                      players:
+                        current: 60
+                        max: 150
+                        hitSAMPLimit: false
+                      game:
+                        language: English
+                        gamemode: Mike's Cops and Robbers
+                        lagcomp: 'On'
+                        mapname: LV (LS next)
+                        version: 0.3.7-R2 | 1.10.6 R1
+                        weather: Cloudy
+                        worldtime: 'Tue 5:55'
+                      network:
+                        country: GB
+                        asn: 62240
+                        asnName: Clouvider Limited
+                      isOnline: false
+      operationId: get-servers
+      description: List/filter all available servers
+      parameters:
+        - schema:
+            type: string
+          in: query
+          name: after
+          description: Cursor to paginate by. All other parameters will be ignored if specified.
+        - schema:
+            type: number
+            minimum: 0
+            maximum: 100
+            default: 50
+          in: query
+          name: limit
+          description: The number of results to return.
+        - schema:
+            type: string
+            pattern: '(address|name|isSupporter|isHosted|isPassworded|players.current|players.max|game.language|game.gamemode|game.lagcomp|game.mapname|game.version|game.weather|game.worldtime|network.country|network.asn|network.asnName|createdAt):(asc|desc)'
+            default: 'createdAt:desc'
+            example: 'players.current:desc'
+          in: query
+          name: order
+          description: The sorting order. Most keys are sortable using the a dot notation (e.g `players.current`). Supported directions are `asc` and `desc`
+        - schema:
+            type: array
+          in: query
+          name: address
+          description: 'An array of addresses (host:port) to lookup'
+        - schema:
+            type: string
+          in: query
+          name: address
+          description: 'A single host:port to lookup'
+        - schema:
+            type: string
+          in: query
+          name: name
+          description: Partial server name lookup
+        - schema:
+            type: boolean
+          in: query
+          name: isSupporter
+          description: 'Lookup servers that are SA:GL supporters'
+        - schema:
+            type: boolean
+          in: query
+          name: isHosted
+          description: 'Lookup servers that are on the SA:MP hosted list.'
+        - schema:
+            type: string
+          in: query
+          name: isPassworded
+          description: Filter servers by their passworded state
+        - schema:
+            type: string
+            pattern: '^((gt|lt|gte|lte|eq):)?[0-9]+$'
+          in: query
+          name: players.current
+          description: 'Filter servers by an exact player count. You can also use operators (gt: lt: lte: e.g lte:100).'
+        - schema:
+            type: string
+            pattern: '^((gt|lt|gte|lte|eq):)?[0-9]+$'
+          in: query
+          name: players.max
+          description: 'Filter servers by an exact total player count. You can also use operators (gt: lt: lte: e.g lte:100).'
+        - schema:
+            type: string
+          in: query
+          name: game.language
+          description: Filter by the configured language
+        - schema:
+            type: string
+          in: query
+          name: game.gamemode
+          description: Filter by the configured gamemode
+        - schema:
+            type: string
+          in: query
+          name: game.lagcomp
+          description: Filter by the configured lagcomp
+        - schema:
+            type: string
+          in: query
+          name: game.mapname
+          description: Filter by the configured mapname
+        - schema:
+            type: string
+          in: query
+          name: game.version
+          description: Filter by the configured version
+        - schema:
+            type: string
+          in: query
+          name: game.weather
+          description: Filter by the configured version
+        - schema:
+            type: string
+          in: query
+          name: game.worldtime
+          description: Filter by the configured worldtime
+        - schema:
+            type: string
+          in: query
+          name: network.country
+          description: 'Filter by the servers location (e.g GB, FR, etc.)'
+        - schema:
+            type: string
+          in: query
+          name: network.asn
+          description: Filter by the servers ASN. E.g `16276 `for OVH
+        - schema:
+            type: string
+          in: query
+          name: network.asnName
+          description: Filter by an ASN name. E.g `OVH SAS`
 components:
   schemas:
     LiveCountry:
@@ -581,3 +1341,4 @@ components:
 tags:
   - name: Live Statistics
   - name: Single Server
+  - name: Servers

@@ -1,17 +1,23 @@
-import { Column, DataType, Index, IsUUID, Model, PrimaryKey, Table } from 'sequelize-typescript';
+import { BelongsTo, Column, DataType, Default, Index, Model, PrimaryKey, Table, Unique } from 'sequelize-typescript';
 import type { Json } from 'sequelize/types/lib/utils';
-import { v4 } from 'uuid';
+
+import { GameServer } from './GameServer';
 
 @Table
 export class GameServerPing extends Model<GameServerPing> {
-	@IsUUID(4)
+	@Unique
 	@PrimaryKey
+	@Default(DataType.UUIDV4)
+	@Column(DataType.UUID)
+	public id: string;
+
 	@Column
-	public id: string = v4();
+	@Index
+	public address: string;
 
 	@Index('servername')
 	@Column
-	public address: string;
+	public ip: string;
 
 	@Index('servername')
 	@Column
@@ -19,13 +25,10 @@ export class GameServerPing extends Model<GameServerPing> {
 
 	@Column(DataType.BOOLEAN)
 	public online: boolean;
-
 	@Column(DataType.BOOLEAN)
 	public hosted: boolean;
-
 	@Column
 	public hostname: string;
-
 	@Column
 	public gamemode: string;
 	@Column
@@ -40,8 +43,8 @@ export class GameServerPing extends Model<GameServerPing> {
 	public ping: number;
 
 	// Rules
-	@Column(DataType.BOOLEAN)
-	public lagcomp: boolean;
+	@Column
+	public lagcomp: string;
 	@Column
 	public mapname: string;
 	@Column
@@ -52,10 +55,8 @@ export class GameServerPing extends Model<GameServerPing> {
 	public weburl: string;
 	@Column
 	public worldtime: string;
-
 	@Column
 	public country: string;
-
 	@Column
 	public asn: string;
 	@Column
@@ -66,4 +67,18 @@ export class GameServerPing extends Model<GameServerPing> {
 
 	@Column(DataType.DATE)
 	public batchPingedAt: Date;
+
+	@BelongsTo(() => GameServer, {
+		foreignKey: 'address',
+		targetKey: 'address',
+		constraints: false,
+	})
+	public parent: GameServer;
+
+	@BelongsTo(() => GameServer, {
+		targetKey: 'lastPingId',
+		foreignKey: 'id',
+		constraints: false,
+	})
+	public latestPing: GameServer;
 }

@@ -3,6 +3,7 @@ import { get } from 'config';
 import * as Joi from 'joi';
 
 import * as ServerRoutes from './routes/server/server';
+import * as ServersRoutes from './routes/server/servers';
 import * as StatisticsRoutes from './routes/statistics/statistics';
 
 import { db } from './util/DB';
@@ -23,6 +24,7 @@ const server: Server = new Server({
 });
 
 const routes: ((router: Server) => void)[] = [
+	ServersRoutes.routes,
 	ServerRoutes.routes,
 	StatisticsRoutes.routes,
 ];

@@ -1,5 +1,3 @@
-import { v4 } from 'uuid';
-
 import { db } from '../util/DB';
 import { S3 } from '../util/S3';
 import { GameServer } from './../models/GameServer';

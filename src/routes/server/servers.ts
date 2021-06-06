@@ -52,7 +52,7 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 	name: {
 		validation: Joi.string(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'hostname'],
+		order: ['ping', 'hostname'],
 		where: (name: string) => ({
 			hostname: { [Op.like]: name },
 		}),
@@ -68,7 +68,7 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 	isHosted: {
 		validation: Joi.boolean(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'hosted'],
+		order: ['ping', 'hosted'],
 		where: (hosted: boolean) => ({
 			hosted,
 		}),
@@ -76,7 +76,7 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 	isPassworded: {
 		validation: Joi.boolean(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'passworded'],
+		order: ['ping', 'passworded'],
 		where: (passworded: boolean) => ({
 			passworded,
 		}),
@@ -84,74 +84,74 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 	'players.current': {
 		validation: Joi.string().regex(/^((gt|lt|gte|lte|eq):)?[0-9]+$/),
 		model: 'gameServerPing',
-		order: ['latestPing', 'onlinePlayers'],
+		order: ['ping', 'onlinePlayers'],
 		where: (currentPlayers: number) =>  numericQuery('onlinePlayers', String(currentPlayers)),
 	},
 	'players.max': {
 		validation: Joi.string().regex(/^((gt|lt|gte|lte|eq):)?[0-9]+$/),
 		model: 'gameServerPing',
-		order: ['latestPing', 'maxPlayers'],
+		order: ['ping', 'maxPlayers'],
 		where: (maxPlayers: number) =>  numericQuery('maxPlayers', String(maxPlayers)),
 	},
 
 	'game.language': {
 		validation: Joi.string(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'language'],
+		order: ['ping', 'language'],
 		where: (language: number) => ({ language }),
 	},
 	'game.gamemode': {
 		validation: Joi.string(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'gamemode'],
+		order: ['ping', 'gamemode'],
 		where: (gamemode: number) => ({ gamemode }),
 	},
 	'game.lagcomp': {
 		validation: Joi.string(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'lagcomp'],
+		order: ['ping', 'lagcomp'],
 		where: (lagcomp: number) => ({ lagcomp }),
 	},
 	'game.mapname': {
 		validation: Joi.string(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'mapname'],
+		order: ['ping', 'mapname'],
 		where: (mapname: number) => ({ mapname }),
 	},
 	'game.version': {
 		validation: Joi.string(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'version'],
+		order: ['ping', 'version'],
 		where: (version: number) => ({ version }),
 	},
 	'game.weather': {
 		validation: Joi.string(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'weather'],
+		order: ['ping', 'weather'],
 		where: (weather: number) => ({ weather }),
 	},
 	'game.worldtime': {
 		validation: Joi.string(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'worldtime'],
+		order: ['ping', 'worldtime'],
 		where: (worldtime: number) => ({ worldtime }),
 	},
 	'network.country': {
 		validation: Joi.string(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'country'],
+		order: ['ping', 'country'],
 		where: (country: number) => ({ country }),
 	},
 	'network.asn': {
 		validation: Joi.number(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'asn'],
+		order: ['ping', 'asn'],
 		where: (asn: number) => ({ asn }),
 	},
 	'network.asnName': {
 		validation: Joi.string(),
 		model: 'gameServerPing',
-		order: ['latestPing', 'asnName'],
+		order: ['ping', 'asnName'],
 		where: (asnName: number) => ({ asnName }),
 	},
 };
@@ -321,7 +321,7 @@ export const routes: RouterFn = (router: Server): void => {
 						'address', 'hostname', 'gamemode', 'language',
 						'passworded', 'onlinePlayers', 'maxPlayers',
 						'lagcomp', 'mapname', 'version', 'weather', 'worldtime',
-						'asn', 'asnName', 'country', 'hosted',
+						'asn', 'asnName', 'country', 'hosted', 'batchPingedAt'
 					],
 				}],
 			}).then(i => i.map(j => transformGameServer(j, i => i.ping[0])));

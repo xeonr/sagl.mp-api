@@ -72,6 +72,10 @@ export function fetchSocials(gameServer: GameServer, ping: GameServerPing): { [k
 		map.set(k, v);
 	}
 
+	if (gameServer.userDiscordInvite) {
+		map.set('discord', gameServer.userDiscordInvite);
+	}
+
 	const resp = {};
 
 	for (const [k, v] of map.entries()) {
@@ -381,7 +385,7 @@ export const routes: RouterFn = (router: Server): void => {
 
 			const results = await GameServer.findAll({
 				...query.parsedQuery,
-				attributes: ['id', 'supporter', 'createdAt'],
+				attributes: ['id', 'supporter', 'createdAt', 'userIcon', 'userSocials', 'userDiscordInvite'],
 				include: [{
 					model: GameServerPing,
 					as: 'ping',

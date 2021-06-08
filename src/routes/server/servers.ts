@@ -6,7 +6,6 @@ import { default as normalizeUrl } from 'normalize-url';
 import { Op } from 'sequelize';
 import { URL } from 'url';
 
-import { getInvite } from '../../util/Discord';
 import { getLastPing } from '../../util/getLastPing';
 import { RouterFn } from '../../util/Types';
 import { GameServer } from './../../models/GameServer';

@@ -102,6 +102,8 @@ const doStuff = (async () => {
 		} : {
 				lastSuccessfulPing: fileAt,
 				lastPingId: ids.find(i => i.address === server.hostname).id,
+				assumedDiscordGuild: server.guild?.id ?? null,
+				assumedIcon: server.guild?.avatar  ??  null,
 			};
 
 		return {
@@ -111,7 +113,7 @@ const doStuff = (async () => {
 			port: server.port,
 			...meta,
 		};
-	}), { updateOnDuplicate: ['lastFailedPing', 'lastSuccessfulPing', 'lastPingId'] });
+	}), { updateOnDuplicate: ['lastFailedPing', 'lastSuccessfulPing', 'lastPingId', 'assumedDiscordGuild', 'assumedIcon'] });
 });
 
 (async () => {

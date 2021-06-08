@@ -160,4 +160,6 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 	await GameServer.bulkCreate(hosts, {
 		ignoreDuplicates: true,
 	});
+
+	process.exit(0);
 })().catch((e) => { console.log(e); }); // tslint:disable-line

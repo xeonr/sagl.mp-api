@@ -338,7 +338,7 @@ export async function transformGameServer(gameServer: GameServer, getRelation = 
 			asnName: ping.asnName,
 		},
 		metadata: {
-			guild: socials.discord ? await getInvite(socials.discord) : null,
+			icon: gameServer.userIcon ?? gameServer.assumedIcon ?? null,
 			socials,
 		},
 		isOnline: ping.batchPingedAt >= new Date(+new Date() - 1000 * 60 * 30),

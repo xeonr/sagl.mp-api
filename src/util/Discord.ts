@@ -1,4 +1,4 @@
-import * as config from 'config';
+import c from 'config';
 import PQueue from 'p-queue';
 import { get } from 'request-promise';
 
@@ -40,7 +40,7 @@ export async function getInvite(inviteId: string): Promise<{ id: string; name: s
 			json: true,
 			timeout: 1000,
 			headers: {
-				Authorization: `Bot ${config.get('discord.key')}`,
+				Authorization: `Bot ${c.get('discord.key')}`,
 			},
 		}).catch(async (e) => {
 			if (e.message.includes('10006')) {

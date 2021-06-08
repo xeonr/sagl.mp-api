@@ -6,6 +6,15 @@ module.exports = {
 		"password": process.env.MYSQL_DB_PASS,
 		"host": process.env.MYSQL_DB_HOST,
 	},
+	"redis": {
+		"host": process.env.REDIS_HOST,
+		"keyPrefix": "saglServer:",
+		"port": process.env.REDIS_PORT,
+		"password": process.env.REDIS_PASS
+	},
+	"discord": {
+		"key": process.env.DISCORD_TOKEN
+	},
 	"storage": {
 		"bucket": "sagl-server-polls",
 		"auth": undefined

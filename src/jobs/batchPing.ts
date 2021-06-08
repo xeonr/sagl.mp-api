@@ -5,12 +5,13 @@ import { pick } from 'lodash';
 import PQueue from 'p-queue';
 import pRetry from 'p-retry';
 
+import { inferSocials } from '../routes/server/servers';
+import '../util/DB';
+import { getInvite, IPartialGuild } from '../util/Discord';
 import { Logger } from '../util/Logger';
 import { lookupIP } from '../util/MaxMind';
 import { GameServer } from './../models/GameServer';
 import { S3 } from './../util/S3';
-
-import '../util/DB';
 
 export interface IQueryValue {
 	hostname: string;
@@ -18,6 +19,7 @@ export interface IQueryValue {
 	hosted: boolean;
 	payload: QueryResponse;
 	ip: { address: string; asn: Asn; country: string; city: string | null };
+	guild?: IPartialGuild;
 }
 
 export interface IFileContents {
@@ -52,7 +54,7 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 		const res = lookupIP(hostname);
 		asn = res.asn;
 		city = res.city;
-	} catch(e) { }
+	} catch (e) { }
 
 	return pRetry(() => {
 		return Query({ host: hostname, port: +port, timeout: 5000 })
@@ -64,7 +66,6 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 					port: +port,
 					hosted,
 					payload: response,
-
 					ip: {
 						address: hostname,
 						asn: pick(asn, ['autonomousSystemOrganization', 'autonomousSystemNumber']),
@@ -72,7 +73,7 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 						city: (<CountryRecord>city.city).names ? (<CountryRecord>city.city).names.en : null,
 					},
 				};
-			})
+			});
 	}, { retries: 3 })
 	.catch(() => {
 		Logger.warn('Failed to ping server.', { id: `${hostname}:${port}` });
@@ -88,7 +89,7 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 				country: (<CountryRecord>city.country).isoCode,
 				city: (<CountryRecord>city.city).names ? (<CountryRecord>city.city).names.en : null,
 			},
-		}
+		};
 	});
 }
 
@@ -100,7 +101,7 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 	Logger.info('Fetched servers', { count: servers.length });
 
 	const queue = new PQueue({ concurrency: 20 });
-	const serverResults: IQueryValue[] = [];
+	let serverResults: IQueryValue[] = [];
 
 	queue.addAll(servers.map(srv => () => {
 		return queryServer(srv, hosted.has(srv))
@@ -120,16 +121,36 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 		tookMs: +new Date() - +startAt,
 	});
 
+	// Fetch guilds for any servers.
+	serverResults = await Promise.all(serverResults.map(async result => {
+		if (!result.payload) {
+			return result;
+		}
+
+		const url = inferSocials(<string>result.payload?.rules.weburl);
+
+		if (!url.has('discord')) {
+			return result;
+		}
+
+		return {
+			...result,
+			guild: await getInvite(url.get('discord')),
+		};
+	}));
+
+	// Prepare and upload
 	const payload = JSON.stringify({
 		servers: serverResults,
 	});
-
 	const file: string =
 		`polls/${startAt.getFullYear()}/${startAt.getUTCMonth() + 1}/${startAt.getUTCDate()}/${startAt.toISOString()}.json.gz`;
+
 	await S3.upload(file, payload, 'application/json');
 
 	Logger.info('Uploaded to GCS', { file });
 
+	// Cache any new hosts we found along the way.
 	const hosts = serverResults.map(i => ({
 		address: i.hostname,
 		ip: i.ip.address,

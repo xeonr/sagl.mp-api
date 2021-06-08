@@ -41,7 +41,7 @@ export const routes: RouterFn = (router: Server): void => {
 					as: 'latestPing',
 					attributes: [
 						'address', 'hostname', 'gamemode', 'language',
-						'passworded', 'onlinePlayers', 'maxPlayers',
+						'passworded', 'onlinePlayers', 'maxPlayers', 'weburl',
 						'lagcomp', 'mapname', 'version', 'weather', 'worldtime',
 						'asn', 'asnName', 'country', 'hosted', 'players', 'batchPingedAt',
 					],

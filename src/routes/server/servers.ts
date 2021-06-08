@@ -2,8 +2,11 @@ import { Request, ResponseToolkit, Server } from '@hapi/hapi';
 import { get } from 'config';
 import * as Joi from 'joi';
 import * as jwt from 'jsonwebtoken';
+import { default as normalizeUrl } from 'normalize-url';
 import { Op } from 'sequelize';
+import { URL } from 'url';
 
+import { getInvite } from '../../util/Discord';
 import { getLastPing } from '../../util/getLastPing';
 import { RouterFn } from '../../util/Types';
 import { GameServer } from './../../models/GameServer';
@@ -16,6 +19,68 @@ const types = {
 	lte: Op.lte,
 	eq: Op.eq,
 };
+
+export function inferSocials(weburl?: string): Map<string, string> {
+	const map = new Map<string, string>();
+
+	try {
+		const url = normalizeUrl((weburl || '').trim(), { defaultProtocol: 'https:', stripAuthentication: true, sortQueryParameters: true });
+		const parsed = new URL(url);
+		const path = parsed.pathname.split('/');
+
+		if (parsed.hostname === 'vk.com') {
+			map.set('vk', path[1]);
+		} else if (parsed.hostname === 'discord.gg') {
+			map.set('discord', path[1]);
+		} else if (parsed.hostname === 'facebook.com' || parsed.hostname === 'www.facebook.com') {
+			map.set('facebook', parsed.pathname);
+		} else if (parsed.hostname === 'www.sa-mp.com') {
+			// na
+		} else {
+			map.set('url', url);
+		}
+	} catch (e) {
+		//
+	}
+
+	return map;
+}
+
+export function fetchSocials(gameServer: GameServer, ping: GameServerPing): { [key: string]: string } {
+	const map: Map<string, string> = inferSocials(ping.weburl);
+
+	try {
+		const url = normalizeUrl((ping.weburl || '').trim(), { defaultProtocol: 'https:', stripAuthentication: true, sortQueryParameters: true });
+		const parsed = new URL(url);
+		const path = parsed.pathname.split('/');
+
+		if (parsed.hostname === 'vk.com') {
+			map.set('vk', path[1]);
+		} else if (parsed.hostname === 'discord.gg') {
+			map.set('discord', path[1]);
+		} else if (parsed.hostname === 'facebook.com' || parsed.hostname === 'www.facebook.com') {
+			map.set('facebook', parsed.pathname);
+		} else if (parsed.hostname === 'www.sa-mp.com') {
+			// na
+		} else {
+			map.set('url', url);
+		}
+	} catch (e) {
+		//
+	}
+
+	for (const [k, v] of Object.entries(gameServer.userSocials || {})) {
+		map.set(k, v);
+	}
+
+	const resp = {};
+
+	for (const [k, v] of map.entries()) {
+		resp[k] = v;
+	}
+
+	return resp;
+}
 
 function numericQuery(key: string, value: string) {
 	const split = String(value).split(':');
@@ -241,8 +306,9 @@ function getCursor(request: any, data: { id: string }[], date: Date, offset: num
 	}, 'jwtSAGL');
 }
 
-export function transformGameServer(gameServer: GameServer, getRelation = i => i.latestPing) {
+export async function transformGameServer(gameServer: GameServer, getRelation = i => i.latestPing) {
 	const ping: GameServerPing = getRelation(gameServer);
+	const socials = fetchSocials(gameServer, ping);
 
 	return {
 		id: gameServer.id,
@@ -270,6 +336,10 @@ export function transformGameServer(gameServer: GameServer, getRelation = i => i
 			country: ping.country,
 			asn: +ping.asn,
 			asnName: ping.asnName,
+		},
+		metadata: {
+			guild: socials.discord ? await getInvite(socials.discord) : null,
+			socials,
 		},
 		isOnline: ping.batchPingedAt >= new Date(+new Date() - 1000 * 60 * 30),
 		snapshotAt: ping.batchPingedAt,
@@ -319,12 +389,12 @@ export const routes: RouterFn = (router: Server): void => {
 					...query.parsedQuery.include,
 					attributes: [
 						'address', 'hostname', 'gamemode', 'language',
-						'passworded', 'onlinePlayers', 'maxPlayers',
+						'passworded', 'onlinePlayers', 'maxPlayers', 'weburl',
 						'lagcomp', 'mapname', 'version', 'weather', 'worldtime',
-						'asn', 'asnName', 'country', 'hosted', 'batchPingedAt'
+						'asn', 'asnName', 'country', 'hosted', 'batchPingedAt',
 					],
 				}],
-			}).then(i => i.map(j => transformGameServer(j, i => i.ping[0])));
+			}).then(i => Promise.all(i.map(j => transformGameServer(j, i => i.ping[0]))));
 
 			const endpoint = `${get('web.publicUrl')}/v1/servers`;
 

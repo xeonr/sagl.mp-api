@@ -25,6 +25,7 @@ export function getGameServerPing(pingedAt: Date, server: IQueryValue): any {
 			ip: server.ip.address,
 			port: server.port,
 			hosted: server.hosted,
+			sacnr: server.sacnr ?? false,
 			online: false,
 			batchPingedAt: pingedAt,
 		};
@@ -36,6 +37,7 @@ export function getGameServerPing(pingedAt: Date, server: IQueryValue): any {
 		port: server.port,
 		online: true,
 		hosted: server.hosted,
+		sacnr: server.sacnr ?? false,
 		hostname: server.payload.hostname,
 		gamemode: server.payload.gamemode,
 		language: server.payload.language,
@@ -111,6 +113,7 @@ const doStuff = (async () => {
 			address: server.hostname,
 			createdAt: fileAt,
 			port: server.port,
+			sacnr: server.sacnr ?? false,
 			...meta,
 		};
 	}), { updateOnDuplicate: ['lastFailedPing', 'lastSuccessfulPing', 'lastPingId', 'assumedDiscordGuild', 'assumedIcon'] });

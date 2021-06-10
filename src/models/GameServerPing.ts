@@ -27,6 +27,8 @@ export class GameServerPing extends Model<GameServerPing> {
 	public online: boolean;
 	@Column(DataType.BOOLEAN)
 	public hosted: boolean;
+	@Column(DataType.BOOLEAN)
+	public sacnr: boolean;
 	@Column
 	public hostname: string;
 	@Column

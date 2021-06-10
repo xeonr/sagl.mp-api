@@ -8,7 +8,7 @@ import { redisPub } from './Redis';
 export interface IPartialGuild {
 	id: string;
 	name: string;
-	avatar: string;
+	avatar: string | null;
 }
 
 export async function getCachedInvite(inviteId: string): Promise<IPartialGuild | null> {
@@ -57,12 +57,12 @@ export async function getInvite(inviteId: string): Promise<{ id: string; name: s
 		return null;
 	}
 
-	const prefix = resp.guild.icon.startsWith('a_') ? 'gif' : 'png';
+	const prefix = resp.guild.icon?.startsWith('a_') ? 'gif' : 'png';
 
 	const response =  {
 		id: resp.guild.id,
 		name: resp.guild.name,
-		avatar: `https://cdn.discordapp.com/icons/${resp.guild.id}/${resp.guild.icon}.${prefix}`,
+		avatar: resp.guild.icon ? `https://cdn.discordapp.com/icons/${resp.guild.id}/${resp.guild.icon}.${prefix}` : null,
 	};
 
 	await redisPub.setex(`discordInvites:${inviteId}`, 60 * 60 * 3, JSON.stringify(response));

@@ -22,6 +22,9 @@ export class GameServer extends Model<GameServer> {
 	public port: number;
 
 	@Column
+	public sacnr: boolean;
+
+	@Column
 	public lastSuccessfulPing: Date;
 
 	@Column

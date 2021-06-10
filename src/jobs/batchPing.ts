@@ -11,12 +11,14 @@ import { getInvite, IPartialGuild } from '../util/Discord';
 import { Logger } from '../util/Logger';
 import { lookupIP } from '../util/MaxMind';
 import { GameServer } from './../models/GameServer';
+import { redisPub } from './../util/Redis';
 import { S3 } from './../util/S3';
 
 export interface IQueryValue {
 	hostname: string;
 	port: number;
 	hosted: boolean;
+	sacnr?: boolean;
 	payload: QueryResponse;
 	ip: { address: string; asn: Asn; country: string; city: string | null };
 	guild?: IPartialGuild;
@@ -26,19 +28,46 @@ export interface IFileContents {
 	servers: IQueryValue[];
 }
 
+async function getSacnr(): Promise<string[]> {
+	try {
+		const list = await redisPub.get('sacnr');
+
+		if (list) {
+			return JSON.parse(list);
+		}
+
+		const newList = (await got.get('http://monitor.sacnr.com/list/masterlist.txt')).body.trim().split('\n');
+
+		if (newList.length) {
+			await redisPub.setex('sacnr', 60 * 60 * 6, JSON.stringify(newList));
+		}
+
+		return newList;
+	} catch (e) {
+		Logger.warn(e.message);
+
+		return [];
+	}
+}
+
 // tslint:disable no-http-string
-async function getServers(): Promise<{ servers: string[]; hosted: Set<string> }> {
+async function getServers(): Promise<{ servers: string[]; hosted: Set<string>; sacnr: Set<string> }> {
 	const servers = await GameServer.findAll({}).then(i => i.map(e => `${e.ip}:${e.port}`));
+	const notViaSacnr = await GameServer.findAll({ where: { sacnr: false }}).then(i => i.map(e => `${e.ip}:${e.port}`));
 	const internet: string = (await got.get('http://lists.sa-mp.com/0.3.7/internet')).body.trim();
 	const hosted: string = (await got.get('http://lists.sa-mp.com/0.3.7/hosted')).body.trim();
+	const sacnr: string[] = await getSacnr();
 
 	return {
-		servers: Array.from(new Set([...servers, ...internet.split('\n'), ...hosted.split('\n')])),
+		servers: Array.from(new Set([...servers, ...internet.split('\n'), ...sacnr, ...hosted.split('\n')])),
 		hosted: new Set([...hosted.split('\n')]),
+		// We consider a server from sacnr if it's not on the internet/hosted list and it wasn't tracked in our internal DB first.
+		// If we identify server from SACNR, it will always be attributed to them.
+		sacnr: new Set([...sacnr.filter(i => !internet.includes(i) && !hosted.includes(i) && !notViaSacnr.includes(i))]),
 	};
 }
 
-function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
+function queryServer(address: string, hosted: boolean, sacnr: boolean): Promise<IQueryValue> {
 	const [hostname, port] = address.split(':');
 
 	let asn: any = {
@@ -66,6 +95,7 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 					port: +port,
 					hosted,
 					payload: response,
+					sacnr,
 					ip: {
 						address: hostname,
 						asn: pick(asn, ['autonomousSystemOrganization', 'autonomousSystemNumber']),
@@ -82,6 +112,7 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 			hostname: address,
 			port: +port,
 			hosted,
+			sacnr,
 			payload: null,
 			ip: {
 				address: hostname,
@@ -97,14 +128,14 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 	const startAt = new Date();
 
 	// Fetch the server listing.
-	const { servers, hosted } = await getServers();
+	const { servers, sacnr, hosted } = await getServers();
 	Logger.info('Fetched servers', { count: servers.length });
 
 	const queue = new PQueue({ concurrency: 20 });
 	let serverResults: IQueryValue[] = [];
 
 	queue.addAll(servers.map(srv => () => {
-		return queryServer(srv, hosted.has(srv))
+		return queryServer(srv, hosted.has(srv), sacnr.has(srv))
 			.then(i => {
 				serverResults.push(i);
 			})
@@ -155,6 +186,7 @@ function queryServer(address: string, hosted: boolean): Promise<IQueryValue> {
 		address: i.hostname,
 		ip: i.ip.address,
 		port: i.port,
+		sacnr: i.sacnr,
 	}));
 
 	await GameServer.bulkCreate(hosts, {

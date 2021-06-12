@@ -222,6 +222,17 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 		order: ['ping', 'asnName'],
 		where: (asnName: number) => ({ asnName }),
 	},
+	'metadata.discordGuild': {
+		validation: [Joi.array().items(Joi.string()).required(), Joi.string().required()],
+		model: 'gameServer',
+		order: ['discordGuild'],
+		where: (guild: number) => ({
+			[Op.or]: [].concat(...(Array.isArray(guild) ? guild : [guild]).map(g => [
+				{ userDiscordGuild: g },
+				{ assumedDiscordGuild: g },
+			])),
+		}),
+	},
 };
 
 // tslint:disable no-any
@@ -342,6 +353,7 @@ export async function transformGameServer(gameServer: GameServer, getRelation = 
 		},
 		metadata: {
 			icon: gameServer.userIcon ?? gameServer.assumedIcon ?? null,
+			discordGuild: gameServer.userDiscordGuild ?? gameServer.assumedDiscordGuild ?? null,
 			socials,
 		},
 		isOnline: ping.batchPingedAt >= new Date(+new Date() - 1000 * 60 * 30),
@@ -385,7 +397,11 @@ export const routes: RouterFn = (router: Server): void => {
 
 			const results = await GameServer.findAll({
 				...query.parsedQuery,
-				attributes: ['id', 'supporter', 'createdAt', 'userIcon', 'userSocials', 'userDiscordInvite'],
+				attributes: [
+					'id', 'supporter', 'createdAt', 'userIcon', 'userSocials',
+					'assumedIcon', 'assumedDiscordGuild', 'assumedSocials', 'userDiscordGuild',
+					'userDiscordInvite',
+				],
 				include: [{
 					model: GameServerPing,
 					as: 'ping',

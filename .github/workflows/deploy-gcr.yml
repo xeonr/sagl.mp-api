@@ -23,6 +23,8 @@ jobs:
         project_id: xeonrio
         service_account_key: ${{ secrets.GCP_SA_KEY }}
 
+    - run: echo "//npm.pkg.github.com/:_authToken=${{secrets.GH_SECRET}}" > ~/.npmrc
+
     - name: Authorize Docker push
       run: gcloud auth configure-docker
 

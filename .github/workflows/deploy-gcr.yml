@@ -23,14 +23,12 @@ jobs:
         project_id: xeonrio
         service_account_key: ${{ secrets.GCP_SA_KEY }}
 
-    - run: echo "//npm.pkg.github.com/:_authToken=${{secrets.GH_SECRET}}" > ~/.npmrc
-
     - name: Authorize Docker push
       run: gcloud auth configure-docker
 
     - name: Build and Push Container
       run: |-
-        docker build -t gcr.io/xeonrio/sagl/services/server-api:${{  github.run_number }} .
+        docker build --build-arg NPM_TOKEN=${{secrets.GH_SECRET}} -t gcr.io/xeonrio/sagl/services/server-api:${{  github.run_number }} .
         docker push gcr.io/xeonrio/sagl/services/server-api:${{  github.run_number }}
 
     - name: Deploy SAGL

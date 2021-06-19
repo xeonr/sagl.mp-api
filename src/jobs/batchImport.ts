@@ -124,7 +124,7 @@ const doStuff = (async () => {
 		await doStuff();
 
 		await new Promise(res => {
-			setTimeout(res, 100);
+			setTimeout(res, 60000 * 10);
 		});
 	}
 })()

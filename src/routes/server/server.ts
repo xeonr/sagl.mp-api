@@ -31,7 +31,11 @@ export const routes: RouterFn = (router: Server): void => {
 		},
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
 			return GameServer.findOne({
-				attributes: ['id', 'supporter', 'createdAt', 'userIcon', 'userSocials', 'userDiscordInvite'],
+				attributes: [
+					'id', 'supporter', 'createdAt', 'userIcon', 'userSocials',
+					'assumedIcon', 'assumedDiscordGuild', 'assumedSocials', 'userDiscordGuild',
+					'userDiscordInvite',
+				],
 				where: {
 					ip: request.params.ip,
 					port: request.params.port,

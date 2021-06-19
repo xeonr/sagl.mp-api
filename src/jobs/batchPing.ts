@@ -1,5 +1,5 @@
 import { Asn, CountryRecord } from '@maxmind/geoip2-node';
-import Query, { QueryResponse } from '@sagl/samp-query';
+import { ISAMPQuery, query }from '@xeonr/samp-query';
 import got from 'got';
 import { pick } from 'lodash';
 import PQueue from 'p-queue';
@@ -19,7 +19,7 @@ export interface IQueryValue {
 	port: number;
 	hosted: boolean;
 	sacnr?: boolean;
-	payload: QueryResponse;
+	payload: ISAMPQuery;
 	ip: { address: string; asn: Asn; country: string; city: string | null };
 	guild?: IPartialGuild;
 }
@@ -86,7 +86,7 @@ function queryServer(address: string, hosted: boolean, sacnr: boolean): Promise<
 	} catch (e) { }
 
 	return pRetry(() => {
-		return Query({ host: hostname, port: +port, timeout: 5000 })
+		return query({ host: hostname, port: +port, timeout: 5000 })
 			.then((response) => {
 				Logger.info('Pinged server.', { id: `${hostname}:${port}` });
 
@@ -158,7 +158,7 @@ function queryServer(address: string, hosted: boolean, sacnr: boolean): Promise<
 			return result;
 		}
 
-		const url = inferSocials(<string>result.payload?.rules.weburl);
+		const url = inferSocials(result.payload?.rules.weburl);
 
 		if (!url.has('discord')) {
 			return result;

@@ -1,12 +1,12 @@
 import { Asn, CountryRecord } from '@maxmind/geoip2-node';
 import { ISAMPQuery, query }from '@xeonr/samp-query';
-import { Op } from 'sequelize';
 import got from 'got';
 import { pick } from 'lodash';
 import PQueue from 'p-queue';
 import pRetry from 'p-retry';
-import { GameServerBlacklist } from '../models/GameServerBlacklist';
+import { Op } from 'sequelize';
 
+import { GameServerBlacklist } from '../models/GameServerBlacklist';
 import { inferSocials } from '../routes/server/servers';
 import '../util/DB';
 import { getInvite, IPartialGuild } from '../util/Discord';
@@ -143,13 +143,17 @@ function queryServer(address: string, hosted: boolean, sacnr: boolean): Promise<
 	const startAt = new Date();
 
 	// Fetch the server listing.
-	const { servers, sacnr, hosted } = await getServers();
+	const { servers, sacnr, hosted, blacklisted } = await getServers();
 	Logger.info('Fetched servers', { count: servers.length });
 
 	const queue = new PQueue({ concurrency: 20 });
 	let serverResults: IQueryValue[] = [];
 
 	queue.addAll(servers.map(srv => () => {
+		if (blacklisted.has(srv)) {
+			return null;
+		}
+
 		return queryServer(srv, hosted.has(srv), sacnr.has(srv))
 			.then(i => {
 				serverResults.push(i);

@@ -119,7 +119,7 @@ function queryServer(address: string, hosted: boolean, sacnr: boolean): Promise<
 		Logger.warn('Failed to ping server.', { id: `${hostname}:${port}` });
 		const offset = Math.round(Math.random() * (1000 * 60 * 60 * 24));
 		GameServerBlacklist.create({ address, expiresAt: new Date(+new Date() + (1000 * 60 * 60 * 24) + offset) })
-			.catch((e) => {
+			.catch(() => {
 				// hmm
 			});
 

@@ -1,3 +1,5 @@
+import { pick } from 'lodash';
+
 import { db } from '../util/DB';
 import { S3 } from '../util/S3';
 import { GameServer } from './../models/GameServer';
@@ -86,8 +88,7 @@ const doStuff = (async () => {
 	const latestFile: string = await getFiles(await getLastExport());
 	if (!latestFile) {
 		Logger.info('No new import was found');
-
-		return;
+		process.exit(0);
 	}
 
 	const file = await S3.getFile(latestFile);
@@ -97,8 +98,11 @@ const doStuff = (async () => {
 
 	const ids = await GameServerPing.bulkCreate(payload.servers.map(server => getGameServerPing(fileAt, server)));
 
-	// Create missing rows
-	await GameServer.bulkCreate(payload.servers.map(server => {
+	const servers = await GameServer.findAll({});
+
+	const create = [];
+
+	for (const server of payload.servers) {
 		const meta = server.payload === null ? {
 			lastFailedPing: fileAt,
 		} : {
@@ -108,7 +112,7 @@ const doStuff = (async () => {
 				assumedIcon: server.guild?.avatar  ??  null,
 			};
 
-		return {
+		const upsertData = {
 			ip: server.ip.address,
 			address: server.hostname,
 			createdAt: fileAt,
@@ -116,19 +120,21 @@ const doStuff = (async () => {
 			sacnr: server.sacnr ?? false,
 			...meta,
 		};
-	}), { updateOnDuplicate: ['lastFailedPing', 'lastSuccessfulPing', 'lastPingId', 'assumedDiscordGuild', 'assumedIcon'] });
+
+		const srv = servers.find(i => i.address === server.hostname);
+		if (srv) {
+			await srv.update(pick(upsertData, ['lastFailedPing', 'lastSuccessfulPing', 'lastPingId', 'assumedDiscordGuild', 'assumedIcon']));
+		} else {
+			create.push(upsertData);
+		}
+	}
+
+	await GameServer.bulkCreate(create);
 });
 
 (async () => {
-	while (true) {
-		await doStuff();
-
-		await new Promise(res => {
-			setTimeout(res, 60000 * 10);
-		});
-	}
+	await doStuff();
 })()
 	.catch((e: Error) => {
 		Logger.error('Error occurred with import', e);
 	});
-

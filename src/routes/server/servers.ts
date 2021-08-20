@@ -109,6 +109,19 @@ export interface IDynamicQuery {
 }
 
 const dynamicQueries: { [key: string]: IDynamicQuery } = {
+	query: {
+		validation: Joi.string(),
+		model: 'gameServerPing',
+		order: ['ping', 'onlinePlayers'],
+		where: (query: string) => ({
+			[Op.or]: [
+				{ hostname: { [Op.substring]: query } },
+				{ address: { [Op.substring]: query } },
+				{ gamemode: { [Op.substring]: query } },
+			],
+		}),
+	},
+
 	address: {
 		validation: [Joi.array().items(Joi.string()).required(), Joi.string().required()],
 		model: 'gameServer',
@@ -122,7 +135,7 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 		model: 'gameServerPing',
 		order: ['ping', 'hostname'],
 		where: (name: string) => ({
-			hostname: { [Op.like]: name },
+			hostname: { [Op.substring]: name },
 		}),
 	},
 	isSupporter: {

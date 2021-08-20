@@ -100,7 +100,7 @@ paths:
     parameters: []
   /statistics/current/game.version:
     get:
-      summary: Return country distribution
+      summary: Return game version distribution
       tags:
         - Live Statistics
       responses:
@@ -124,7 +124,7 @@ paths:
     parameters: []
   /statistics/current/game.gamemode:
     get:
-      summary: Return country distribution
+      summary: Return game mode distribution
       tags:
         - Live Statistics
       responses:
@@ -150,7 +150,7 @@ paths:
     parameters: []
   /statistics/current/game.language:
     get:
-      summary: Return country distribution
+      summary: Return game language distribution
       tags:
         - Live Statistics
       responses:
@@ -783,6 +783,11 @@ paths:
           in: query
           name: metadata.discordGuild
           description: Filter by a discord guild id.
+        - schema:
+            type: string
+          in: query
+          name: query
+          description: Filter by multiple fields
 components:
   schemas:
     LiveCountry:

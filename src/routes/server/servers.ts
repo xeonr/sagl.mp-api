@@ -17,6 +17,7 @@ const types = {
 	lt: Op.lt,
 	lte: Op.lte,
 	eq: Op.eq,
+	bt: Op.between,
 };
 
 export function inferSocials(weburl?: string): Map<string, string> {
@@ -91,7 +92,7 @@ function numericQuery(key: string, value: string) {
 	if (split.length === 2 && types[split[0]]) {
 		return {
 			[key]: {
-				[types[split[0]]]: split[1],
+				[types[split[0]]]: split[1].split('-'),
 			},
 		};
 	}
@@ -163,13 +164,13 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 		}),
 	},
 	'players.current': {
-		validation: Joi.string().regex(/^((gt|lt|gte|lte|eq):)?[0-9]+$/),
+		validation: Joi.string().regex(/^((gt|lt|gte|lte|eq|bt):)?[0-9]+(-[0-9]+)?$/),
 		model: 'gameServerPing',
 		order: ['ping', 'onlinePlayers'],
 		where: (currentPlayers: number) =>  numericQuery('onlinePlayers', String(currentPlayers)),
 	},
 	'players.max': {
-		validation: Joi.string().regex(/^((gt|lt|gte|lte|eq):)?[0-9]+$/),
+		validation: Joi.string().regex(/^((gt|lt|gte|lte|eq|bt):)?[0-9]+(-[0-9]+)?$/),
 		model: 'gameServerPing',
 		order: ['ping', 'maxPlayers'],
 		where: (maxPlayers: number) =>  numericQuery('maxPlayers', String(maxPlayers)),

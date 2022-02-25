@@ -1,5 +1,5 @@
 import { Request, ResponseToolkit, Server } from '@hapi/hapi';
-import { get } from 'config';
+import config from 'config';
 import * as Joi from 'joi';
 import * as jwt from 'jsonwebtoken';
 import { default as normalizeUrl } from 'normalize-url';
@@ -429,7 +429,7 @@ export const routes: RouterFn = (router: Server): void => {
 				}],
 			}).then(i => Promise.all(i.map(j => transformGameServer(j, i => i.ping[0]))));
 
-			const endpoint = `${get('web.publicUrl')}/v1/servers`;
+			const endpoint = `${config.get('web.publicUrl')}/v1/servers`;
 
 			if (results.length >= 1) {
 				return h

@@ -1,5 +1,5 @@
 import { Lifecycle, Request, RequestEvent, ResponseToolkit, Server } from '@hapi/hapi';
-import { get } from 'config';
+import config from 'config';
 import * as Joi from 'joi';
 
 import * as ServerRoutes from './routes/server/server';
@@ -11,8 +11,8 @@ import { Logger } from './util/Logger';
 import { RouterFn } from './util/Types';
 
 const server: Server = new Server({
-	host: get('web.host'),
-	port: get('web.port'),
+	host: config.get('web.host'),
+	port: config.get('web.port'),
 	routes: {
 		cors: true,
 		validate: {
@@ -42,7 +42,9 @@ const routes: ((router: Server) => void)[] = [
 		},
 	});
 
-	await db.sync();
+	if (process.env.NODE_ENV === 'production') {
+		await db.sync();
+	}
 
 	server.validator(Joi);
 	server.realm.modifiers.route.prefix = '/v1';
@@ -61,9 +63,9 @@ const routes: ((router: Server) => void)[] = [
 	await server.start();
 
 	Logger.info('Started server', {
-		host: get('web.host'),
-		port: get('web.port'),
-		url: `http://${get('web.host')}:${get('web.port')}`, // tslint:disable-line
+		host: config.get('web.host'),
+		port: config.get('web.port'),
+		url: `http://${config.get('web.host')}:${config.get('web.port')}`, // tslint:disable-line
 	});
 })()
 	.catch((e: Error): void => {

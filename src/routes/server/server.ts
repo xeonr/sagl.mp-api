@@ -77,16 +77,17 @@ export const routes: RouterFn = (router: Server): void => {
 		},
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
 			const date = roundTo30Minutes(moment().subtract(1, request.query.period));
+			const resolution = request.query.period === 'week' ? 60 * 60 * 2 : 60 * 30;
 
 			return GameServerPing.findAll({
 				where: {
 					online: true,
 					ip: request.params.ip,
 					port: request.params.port,
-					batchPingedAt: { [Op.gte]: date },
+					batchPingedAt: { [Op.gte]: date.toDate() },
 				},
 				attributes: [
-					[Sequelize.literal(`UNIX_TIMESTAMP(\`batchPingedAt\`) DIV (30* 60)`), 'date'],
+					[Sequelize.literal(`UNIX_TIMESTAMP(\`batchPingedAt\`) DIV (${resolution})`), 'date'],
 					[Sequelize.fn('MIN', Sequelize.col('batchPingedAt')), 'timestamp'],
 					[Sequelize.fn('MIN', Sequelize.col('onlinePlayers')), 'peak'],
 					[Sequelize.fn('AVG', Sequelize.col('onlinePlayers')), 'average'],
@@ -122,15 +123,17 @@ export const routes: RouterFn = (router: Server): void => {
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
 			const date = roundTo30Minutes(moment().subtract(1, request.query.period));
 
+			const resolution = request.query.period === 'week' ? 60 * 60 * 2 : 60 * 30;
+
 			return GameServerPing.findAll({
 				where: {
 					online: true,
 					ip: request.params.ip,
 					port: request.params.port,
-					batchPingedAt: { [Op.gte]: date },
+					batchPingedAt: { [Op.gte]: date.toDate() },
 				},
 				attributes: [
-					[Sequelize.literal(`UNIX_TIMESTAMP(\`batchPingedAt\`) DIV (30* 60)`), 'date'],
+					[Sequelize.literal(`UNIX_TIMESTAMP(\`batchPingedAt\`) DIV (${resolution})`), 'date'],
 					[Sequelize.fn('MIN', Sequelize.col('batchPingedAt')), 'timestamp'],
 					[Sequelize.fn('AVG', Sequelize.col('ping')), 'ping'],
 				],

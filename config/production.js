@@ -12,6 +12,12 @@ module.exports = {
 		"port": process.env.REDIS_PORT,
 		"password": process.env.REDIS_PASS
 	},
+	"influxdb": {
+		"url": "http://infra.lon1.xeonr.io:8086",
+		"token": process.env.INFLUXDB_TOKEN,
+		"bucket": "sagl-prod",
+		"org": "SA:GL",
+	},
 	"discord": {
 		"key": process.env.DISCORD_TOKEN
 	},

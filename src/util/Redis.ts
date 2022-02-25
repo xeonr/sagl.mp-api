@@ -1,8 +1,8 @@
-import { get } from 'config';
+import config from 'config';
 import IORedis, { Redis } from 'ioredis';
 
 function getRedis(): Redis {
-	return new IORedis(get('redis'));
+	return new IORedis(config.get('redis'));
 }
 
 const client: { pub: Redis } = {

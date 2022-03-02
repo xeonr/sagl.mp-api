@@ -24,18 +24,18 @@ jobs:
         service_account_key: ${{ secrets.GCP_SA_KEY }}
 
     - name: Authorize Docker push
-      run: gcloud auth configure-docker
+      run: gcloud auth configure-docker europe-west1-docker.pkg.dev
 
     - name: Build and Push Container
       run: |-
-        docker build --build-arg NPM_TOKEN=${{secrets.GH_SECRET}} -t gcr.io/xeonrio/sagl/services/server-api:${{  github.run_number }} .
-        docker push gcr.io/xeonrio/sagl/services/server-api:${{  github.run_number }}
+        docker build --build-arg NPM_TOKEN=${{secrets.GH_SECRET}} -t europe-west1-docker.pkg.dev/xeonrio/sagl/server-api:${{  github.run_number }} .
+        docker push europe-west1-docker.pkg.dev/xeonrio/sagl/server-api:${{  github.run_number }}
 
     - name: Deploy SAGL
       run: |-
         gcloud run deploy sagl-server-api \
           --region europe-west1 \
-          --image gcr.io/xeonrio/sagl/services/server-api:${{  github.run_number }} \
+          --image europe-west1-docker.pkg.dev/xeonrio/sagl/server-api:${{  github.run_number }} \
           --platform "managed" \
           --quiet
 
@@ -44,4 +44,4 @@ jobs:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       uses: Ilshidur/action-discord@master
       with:
-        args: '🚀 ${{github.actor}} successfully deployed the SA:GL Cloud API (Release `${{github.run_number}}`).'
+        args: '🚀 ${{github.actor}} successfully deployed the SA:GL Server API (Release `${{github.run_number}}`).'

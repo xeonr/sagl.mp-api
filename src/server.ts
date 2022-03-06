@@ -30,6 +30,9 @@ const routes: ((router: Server) => void)[] = [
 ];
 
 (async (): Promise<void> => {
+
+	Logger.info('Hello.');
+
 	// Point to docs.
 	server.route({
 		method: 'GET',

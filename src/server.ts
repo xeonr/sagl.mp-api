@@ -1,12 +1,12 @@
 import { Lifecycle, Request, RequestEvent, ResponseToolkit, Server } from '@hapi/hapi';
-import config from 'config';
+import config from 'config'; // tslint:disable-line
 import * as Joi from 'joi';
 
 import * as ServerRoutes from './routes/server/server';
 import * as ServersRoutes from './routes/server/servers';
 import * as StatisticsRoutes from './routes/statistics/statistics';
 
-import { db } from './util/DB';
+import './util/DB'; // tslint:disable-line
 import { Logger } from './util/Logger';
 import { RouterFn } from './util/Types';
 
@@ -41,10 +41,6 @@ const routes: ((router: Server) => void)[] = [
 			return h.redirect('https://sagl.stoplight.io/docs/server-api/reference/server-api.v1.yaml');
 		},
 	});
-
-	if (process.env.NODE_ENV === 'production') {
-		await db.sync();
-	}
 
 	server.validator(Joi);
 	server.realm.modifiers.route.prefix = '/v1';

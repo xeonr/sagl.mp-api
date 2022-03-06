@@ -7,6 +7,7 @@ COPY .npmrc-ci .npmrc
 COPY package.json package.json
 RUN npm install
 RUN rm -f .npmrc
+RUN npm run build
 
 COPY . .
-CMD npm run start
+CMD npm run production

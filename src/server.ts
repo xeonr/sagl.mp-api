@@ -6,7 +6,7 @@ import * as ServerRoutes from './routes/server/server';
 import * as ServersRoutes from './routes/server/servers';
 import * as StatisticsRoutes from './routes/statistics/statistics';
 
-import './util/DB'; // tslint:disable-line
+import { db } from './util/DB';
 import { Logger } from './util/Logger';
 import { RouterFn } from './util/Types';
 
@@ -30,8 +30,7 @@ const routes: ((router: Server) => void)[] = [
 ];
 
 (async (): Promise<void> => {
-
-	Logger.info('Hello.');
+	Logger.info('Hello.', !!db);
 
 	// Point to docs.
 	server.route({

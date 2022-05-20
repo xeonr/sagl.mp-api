@@ -95,7 +95,7 @@ export const routes: RouterFn = (router: Server): void => {
 				influxdb.getQueryApi(config.get('influxdb.org')).queryRows(fluxQuery, {
 					next(row: string[], consumer) {
 						const data = consumer.toObject(row);
-						rows.push([data._start, data._value]);
+						rows.push([data._time, data._value]);
 					},
 					error(err) {
 						reject(err);
@@ -140,7 +140,7 @@ export const routes: RouterFn = (router: Server): void => {
 				influxdb.getQueryApi(config.get('influxdb.org')).queryRows(fluxQuery, {
 					next(row: string[], consumer) {
 						const data = consumer.toObject(row);
-						rows.push([data._start, Math.round(data._value)]);
+						rows.push([data._time, Math.round(data._value)]);
 					},
 					error(err) {
 						reject(err);

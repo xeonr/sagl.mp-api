@@ -20,7 +20,7 @@ jobs:
     - name: Setup Cloud SDK
       uses: google-github-actions/setup-gcloud@v0.2.0
       with:
-        project_id: xeonrio
+        project_id: xeonr-io
         service_account_key: ${{ secrets.GCP_SA_KEY }}
 
     - name: Authorize Docker push
@@ -28,14 +28,14 @@ jobs:
 
     - name: Build and Push Container
       run: |-
-        docker build --build-arg NPM_TOKEN=${{secrets.GH_SECRET}} -t europe-west1-docker.pkg.dev/xeonrio/sagl/server-api:${{  github.run_number }} .
-        docker push europe-west1-docker.pkg.dev/xeonrio/sagl/server-api:${{  github.run_number }}
+        docker build --build-arg NPM_TOKEN=${{secrets.GH_SECRET}} -t europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api:${{  github.run_number }} .
+        docker push europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api:${{  github.run_number }}
 
     - name: Deploy SAGL
       run: |-
         gcloud run deploy sagl-server-api \
           --region europe-west1 \
-          --image europe-west1-docker.pkg.dev/xeonrio/sagl/server-api:${{  github.run_number }} \
+          --image europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api:${{  github.run_number }} \
           --platform "managed" \
           --quiet
 

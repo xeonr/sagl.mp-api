@@ -1,11 +1,12 @@
 import { notFound } from '@hapi/boom';
 import { Lifecycle, Request, Server } from '@hapi/hapi';
+import { flux, fluxDuration, fluxExpression } from '@influxdata/influxdb-client';
+import config from 'config';
 import Joi from 'joi';
 import moment, { Moment } from 'moment';
-import { Op } from 'sequelize';
-import { Sequelize } from 'sequelize-typescript';
 
 import { GameServerPing } from '../../models/GameServerPing';
+import { influxdb } from '../../util/Influxdb';
 import { GameServer } from './../../models/GameServer';
 import { RouterFn } from './../../util/Types';
 import { transformGameServer } from './servers';
@@ -77,30 +78,31 @@ export const routes: RouterFn = (router: Server): void => {
 		},
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
 			const date = roundTo30Minutes(moment().subtract(1, request.query.period));
-			const resolution = request.query.period === 'week' ? 60 * 60 * 2 : 60 * 30;
+			const resolution = fluxDuration(request.query.period === 'week' ? '2h' : '30m');
+			const fn = fluxExpression(request.query.type === 'peak' ? 'max' : request.query.type === 'average' ? 'mean' : 'min');
+			const address = `${request.params.ip}:${request.params.port}`;
 
-			return GameServerPing.findAll({
-				where: {
-					online: true,
-					ip: request.params.ip,
-					port: request.params.port,
-					batchPingedAt: { [Op.gte]: date.toDate() },
-				},
-				attributes: [
-					[Sequelize.literal(`UNIX_TIMESTAMP(\`batchPingedAt\`) DIV (${resolution})`), 'date'],
-					[Sequelize.fn('MIN', Sequelize.col('batchPingedAt')), 'timestamp'],
-					[Sequelize.fn('MIN', Sequelize.col('onlinePlayers')), 'peak'],
-					[Sequelize.fn('AVG', Sequelize.col('onlinePlayers')), 'average'],
-					[Sequelize.fn('MAX', Sequelize.col('onlinePlayers')), 'max'],
-				],
-				order: [[Sequelize.col('timestamp'), 'asc']],
-				group: ['date'],
-				raw: true,
-			}).then(res => {
-				return res.map((i: any) => { // tslint:disable-line
-					const ts = roundTo30Minutes(moment(i.timestamp));
+			const fluxQuery = flux`
+				from(bucket: ${config.get('influxdb.bucket')})
+				|> range(start: time(v: ${date.toISOString()}), stop: now())
+				|> filter(fn: (r) => r["_measurement"] == "server" and r["_field"] == "players" and r["address"] == ${address})
+				|> aggregateWindow(every: ${resolution}, fn: ${fn}, createEmpty: true)
+			`;
 
-					return [ts.toISOString(), +i[request.query.type]];
+			return new Promise((resolve, reject) => {
+				const rows: [string, number][] = [];
+
+				influxdb.getQueryApi(config.get('influxdb.org')).queryRows(fluxQuery, {
+					next(row: string[], consumer) {
+						const data = consumer.toObject(row);
+						rows.push([data._start, data._value]);
+					},
+					error(err) {
+						reject(err);
+					},
+					complete() {
+						resolve(rows);
+					},
 				});
 			});
 		},
@@ -122,29 +124,30 @@ export const routes: RouterFn = (router: Server): void => {
 		},
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
 			const date = roundTo30Minutes(moment().subtract(1, request.query.period));
+			const resolution = fluxDuration(request.query.period === 'week' ? '2h' : '30m');
+			const address = `${request.params.ip}:${request.params.port}`;
 
-			const resolution = request.query.period === 'week' ? 60 * 60 * 2 : 60 * 30;
+			const fluxQuery = flux`
+				from(bucket: ${config.get('influxdb.bucket')})
+				|> range(start: time(v: ${date.toISOString()}), stop: now())
+				|> filter(fn: (r) => r["_measurement"] == "server" and r["_field"] == "ping" and r["address"] == ${address})
+				|> aggregateWindow(every: ${resolution}, fn: avg, createEmpty: true)
+			`;
 
-			return GameServerPing.findAll({
-				where: {
-					online: true,
-					ip: request.params.ip,
-					port: request.params.port,
-					batchPingedAt: { [Op.gte]: date.toDate() },
-				},
-				attributes: [
-					[Sequelize.literal(`UNIX_TIMESTAMP(\`batchPingedAt\`) DIV (${resolution})`), 'date'],
-					[Sequelize.fn('MIN', Sequelize.col('batchPingedAt')), 'timestamp'],
-					[Sequelize.fn('AVG', Sequelize.col('ping')), 'ping'],
-				],
-				order: [[Sequelize.col('timestamp'), 'asc']],
-				group: ['date'],
-				raw: true,
-			}).then(res => {
-				return res.map((i: any) => { // tslint:disable-line
-					const ts = roundTo30Minutes(moment(i.timestamp));
+			return new Promise((resolve, reject) => {
+				const rows: [string, number][] = [];
 
-					return [ts.toISOString(), Math.round(i.ping)];
+				influxdb.getQueryApi(config.get('influxdb.org')).queryRows(fluxQuery, {
+					next(row: string[], consumer) {
+						const data = consumer.toObject(row);
+						rows.push([data._start, Math.round(data._value)]);
+					},
+					error(err) {
+						reject(err);
+					},
+					complete() {
+						resolve(rows);
+					},
 				});
 			});
 		},

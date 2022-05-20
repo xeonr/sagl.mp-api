@@ -15,7 +15,7 @@ module.exports = {
 	"influxdb": {
 		"url": "http://infra.lon1.xeonr.io:8086",
 		"token": process.env.INFLUXDB_TOKEN,
-		"bucket": "sagl-prod",
+		"bucket": "sagl-servers-prod",
 		"org": "SA:GL",
 	},
 	"discord": {

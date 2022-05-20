@@ -30,6 +30,7 @@ export function getGameServerPing(pingedAt: Date, server: IQueryValue): any {
 			port: server.port,
 			hosted: server.hosted,
 			sacnr: server.sacnr ?? false,
+			openmp: server.openmp ?? false,
 			online: false,
 			batchPingedAt: pingedAt,
 		};
@@ -42,6 +43,7 @@ export function getGameServerPing(pingedAt: Date, server: IQueryValue): any {
 		online: true,
 		hosted: server.hosted,
 		sacnr: server.sacnr ?? false,
+		openmp: server.openmp ?? false,
 		hostname: server.payload.hostname,
 		gamemode: server.payload.gamemode,
 		language: server.payload.language,
@@ -105,6 +107,7 @@ async function seedDatabase(pingedAt: Date, queryServers: IQueryValue[]): Promis
 			createdAt: pingedAt,
 			port: server.port,
 			sacnr: server.sacnr ?? false,
+			openmp: server.openmp ?? false,
 			...meta,
 		};
 
@@ -135,7 +138,7 @@ async function seedInflux(pingedAt: Date, queryServers: IQueryValue[]): Promise<
 					.tag('asnName', `${server.ip.asn.autonomousSystemOrganization ?? 'unknown'}`)
 					.tag('asnId', `${server.ip.asn.autonomousSystemNumber ?? 'unknown'}`)
 					.tag('version', `${server.payload.rules.version ?? 'unknown'})`)
-					.tag('origin', server.hosted ? 'hosted' : server.sacnr ? 'sacnr' : 'sagl')
+					.tag('origin', server.hosted ? 'hosted' : server.openmp ? 'openmp' : server.sacnr ? 'sacnr' : 'sagl')
 					.timestamp(pingedAt),
 			);
 		}

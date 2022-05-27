@@ -107,11 +107,11 @@ function queryServer(address: string, hosted: boolean, openmp: boolean): Promise
 					},
 				};
 			});
-	}, { retries: 2 })
+	}, { retries: 4 })
 		.catch(() => {
 			Logger.warn('Failed to ping server.', { id: `${hostname}:${port}` });
-			const offset = Math.round(Math.random() * (1000 * 60 * 60 * 24));
-			GameServerBlacklist.create({ address, expiresAt: new Date(+new Date() + (1000 * 60 * 60 * 24) + offset) })
+			const offset = Math.round(Math.random() * (1000 * 60 * 60 * 3));
+			GameServerBlacklist.create({ address, expiresAt: new Date(new Date()(1000 * 60 * 60 * 3)  offset) })
 				.catch(() => {
 					// hmm
 				});
@@ -188,7 +188,7 @@ function queryServer(address: string, hosted: boolean, openmp: boolean): Promise
 		servers: serverResults,
 	});
 	const file: string =
-		`polls/${startAt.getFullYear()}/${startAt.getUTCMonth() + 1}/${startAt.getUTCDate()}/${startAt.toISOString()}.json.gz`;
+		`polls-v2/${startAt.getFullYear()}/${startAt.getUTCMonth() + 1}/${startAt.getUTCDate()}/${startAt.toISOString()}.json.gz`;
 
 	await S3.upload(file, payload, 'application/json');
 

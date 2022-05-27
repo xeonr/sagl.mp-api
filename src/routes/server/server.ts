@@ -5,11 +5,10 @@ import config from 'config';
 import Joi from 'joi';
 import moment, { Moment } from 'moment';
 
-import { GameServerPing } from '../../models/GameServerPing';
+import { elasticsearch } from '../../util/Elasticsearch';
 import { influxdb } from '../../util/Influxdb';
-import { GameServer } from './../../models/GameServer';
 import { RouterFn } from './../../util/Types';
-import { transformGameServer } from './servers';
+import { transformGameServerEs } from './servers';
 
 const roundTo30Minutes = (date: Moment): Moment => {
 	return moment(date)
@@ -31,33 +30,20 @@ export const routes: RouterFn = (router: Server): void => {
 			},
 		},
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
-			return GameServer.findOne({
-				attributes: [
-					'id', 'supporter', 'createdAt', 'userIcon', 'userSocials',
-					'assumedIcon', 'assumedDiscordGuild', 'assumedSocials', 'userDiscordGuild',
-					'userDiscordInvite',
-				],
-				where: {
-					ip: request.params.ip,
-					port: request.params.port,
+			const result = await elasticsearch.search({
+				size: 1,
+				query: {
+					match: {
+						_id: `${request.params.ip}:${request.params.port}`,
+					},
 				},
-				include: [{
-					model: GameServerPing,
-					as: 'latestPing',
-					attributes: [
-						'address', 'hostname', 'gamemode', 'language',
-						'passworded', 'onlinePlayers', 'maxPlayers', 'weburl',
-						'lagcomp', 'mapname', 'version', 'weather', 'worldtime',
-						'asn', 'asnName', 'country', 'hosted', 'players', 'batchPingedAt',
-					],
-				}],
-			}).then(async r => {
-				if (!r) {
-					throw notFound('Game server not tracked');
-				}
-
-				return transformGameServer(r);
 			});
+
+			if (result.hits.hits.length < 1) {
+				throw notFound('Game server not tracked');
+			}
+
+			return transformGameServerEs(result.hits.hits[0]);
 		},
 	});
 

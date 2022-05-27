@@ -29,5 +29,11 @@ module.exports = {
 		"publicUrl": "https://server-api.sagl.app",
 		"host": "0.0.0.0",
 		"port": process.env.PORT,
+	},
+	"elasticsearch": {
+		"url": process.env.ELASTICSEARCH_URL,
+		"index": process.env.ELASTICSEARCH_INDEX,
+		"username": process.env.ELASTICSEARCH_USERNAME,
+		"password": process.env.ELASTICSEARCH_PASSWORD,
 	}
 }

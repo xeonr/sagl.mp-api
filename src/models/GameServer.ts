@@ -55,6 +55,9 @@ export class GameServer extends Model<GameServer> {
 	@Column
 	public userIcon: string;
 
+	@Column
+	public openmp: boolean;
+
 	@Column(DataType.JSON)
 	public userSocials: object;
 

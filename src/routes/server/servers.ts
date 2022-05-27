@@ -1,3 +1,4 @@
+import { SearchRequest } from '@elastic/elasticsearch/lib/api/types';
 import { Request, ResponseToolkit, Server } from '@hapi/hapi';
 import config from 'config';
 import * as Joi from 'joi';
@@ -6,19 +7,9 @@ import { default as normalizeUrl } from 'normalize-url';
 import { Op } from 'sequelize';
 import { URL } from 'url';
 
-import { getLastPing } from '../../util/getLastPing';
+import { elasticsearch } from '../../util/Elasticsearch';
 import { RouterFn } from '../../util/Types';
 import { GameServer } from './../../models/GameServer';
-import { GameServerPing } from './../../models/GameServerPing';
-
-const types = {
-	gt: Op.gt,
-	gte: Op.gte,
-	lt: Op.lt,
-	lte: Op.lte,
-	eq: Op.eq,
-	bt: Op.between,
-};
 
 export function inferSocials(weburl?: string): Map<string, string> {
 	const map = new Map<string, string>();
@@ -46,11 +37,11 @@ export function inferSocials(weburl?: string): Map<string, string> {
 	return map;
 }
 
-export function fetchSocials(gameServer: GameServer, ping: GameServerPing): { [key: string]: string } {
-	const map: Map<string, string> = inferSocials(ping.weburl);
+export function fetchSocials(gameServer: GameServer, weburl: string): { [key: string]: string } {
+	const map: Map<string, string> = inferSocials(weburl);
 
 	try {
-		const url = normalizeUrl((ping.weburl || '').trim(), { defaultProtocol: 'https:', stripAuthentication: true, sortQueryParameters: true });
+		const url = normalizeUrl((weburl || '').trim(), { defaultProtocol: 'https:', stripAuthentication: true, sortQueryParameters: true });
 		const parsed = new URL(url);
 		const path = parsed.pathname.split('/');
 
@@ -89,157 +80,152 @@ export function fetchSocials(gameServer: GameServer, ping: GameServerPing): { [k
 function numericQuery(key: string, value: string) {
 	const split = String(value).split(':');
 
-	if (split.length === 2 && types[split[0]]) {
+	const types = ['gt', 'gte', 'lt', 'lte', 'eq', 'bt'];
+
+	if (split.length === 2 && types.includes(split[0])) {
+		if (split[0] === 'eq') {
+			return { term: { [key]: value }};
+		}
+
+		if (split[0] === 'bt') {
+			const [from, to] = split[1].split('-');
+
+			return { range: { [key]: { gte: from, lte: to } } };
+		}
+
 		return {
-			[key]: {
-				[types[split[0]]]: split[1].split('-'),
+			range: {
+				[key]: {
+					[split[0]]: split[1].split('-')[0],
+				},
 			},
 		};
 	}
 
-	return {
-		[key]: value,
-	};
+	return { term: { [key]: value }};
 }
 
 export interface IDynamicQuery {
 	validation: Joi.Schema | Joi.Schema[];
-	model: 'gameServer' | 'gameServerPing';
-	order: string[];
+	order: string;
+	type?: 'es' | 'sql';
 	where(param: any): object;
 }
 
 const dynamicQueries: { [key: string]: IDynamicQuery } = {
 	query: {
 		validation: Joi.string(),
-		model: 'gameServerPing',
-		order: ['ping', 'onlinePlayers'],
+		order: '_score',
 		where: (query: string) => ({
-			[Op.or]: [
-				{ hostname: { [Op.substring]: query } },
-				{ address: { [Op.substring]: query } },
-				{ gamemode: { [Op.substring]: query } },
-			],
+			multi_match: {
+				query,
+				fields: ['hostname', 'address', 'gamemode'],
+				type: 'phrase',
+			},
 		}),
 	},
 
 	address: {
 		validation: [Joi.array().items(Joi.string()).required(), Joi.string().required()],
-		model: 'gameServer',
-		order: ['address'],
+		order: '_id',
 		where: (addresses: string | string[]) => ({
-			[Op.or]: (Array.isArray(addresses) ? addresses : [addresses]).map(address => ({ address })),
+			terms: { _id: (Array.isArray(addresses) ? addresses : [addresses]) },
 		}),
 	},
 	name: {
 		validation: Joi.string(),
-		model: 'gameServerPing',
-		order: ['ping', 'hostname'],
+		order: 'hostname',
 		where: (name: string) => ({
-			hostname: { [Op.substring]: name },
+			match: { hostname: name },
 		}),
 	},
 	isSupporter: {
 		validation: Joi.boolean(),
-		model: 'gameServer',
-		order: ['supporter'],
+		order: 'supporter',
+		type: 'sql',
 		where: (supporter: boolean) => ({
 			supporter,
 		}),
 	},
 	isHosted: {
 		validation: Joi.boolean(),
-		model: 'gameServerPing',
-		order: ['ping', 'hosted'],
+		order: 'hosted',
 		where: (hosted: boolean) => ({
-			hosted,
+			term: { hosted },
 		}),
 	},
 	isPassworded: {
 		validation: Joi.boolean(),
-		model: 'gameServerPing',
-		order: ['ping', 'passworded'],
+		order: 'passworded',
 		where: (passworded: boolean) => ({
-			passworded,
+			term: { passworded },
 		}),
 	},
 	'players.current': {
 		validation: Joi.string().regex(/^((gt|lt|gte|lte|eq|bt):)?[0-9]+(-[0-9]+)?$/),
-		model: 'gameServerPing',
-		order: ['ping', 'onlinePlayers'],
+		order: 'onlinePlayers',
 		where: (currentPlayers: number) =>  numericQuery('onlinePlayers', String(currentPlayers)),
 	},
 	'players.max': {
 		validation: Joi.string().regex(/^((gt|lt|gte|lte|eq|bt):)?[0-9]+(-[0-9]+)?$/),
-		model: 'gameServerPing',
-		order: ['ping', 'maxPlayers'],
+		order: 'maxPlayers',
 		where: (maxPlayers: number) =>  numericQuery('maxPlayers', String(maxPlayers)),
 	},
 
 	'game.language': {
 		validation: Joi.string(),
-		model: 'gameServerPing',
-		order: ['ping', 'language'],
-		where: (language: number) => ({ language }),
+		order: 'rules.language.keyword',
+		where: (language: number) => ({ term: { 'language.keyword': language } }),
 	},
 	'game.gamemode': {
 		validation: Joi.string(),
-		model: 'gameServerPing',
-		order: ['ping', 'gamemode'],
-		where: (gamemode: number) => ({ gamemode }),
+		order: 'rules.gamemode.keyword',
+		where: (gamemode: number) => ({ term: { 'gamemode.keyword': gamemode } }),
 	},
 	'game.lagcomp': {
 		validation: Joi.string(),
-		model: 'gameServerPing',
-		order: ['ping', 'lagcomp'],
-		where: (lagcomp: number) => ({ lagcomp }),
+		order: 'rules.lagcomp',
+		where: (lagcomp: number) => ({ term: { 'rules.lagcomp': lagcomp } }),
 	},
 	'game.mapname': {
 		validation: Joi.string(),
-		model: 'gameServerPing',
-		order: ['ping', 'mapname'],
-		where: (mapname: number) => ({ mapname }),
+		order: 'rules.mapname.keyword',
+		where: (mapname: number) => ({ term: { 'rules.mapname.keyword': mapname } }),
 	},
 	'game.version': {
 		validation: Joi.string(),
-		model: 'gameServerPing',
-		order: ['ping', 'version'],
-		where: (version: number) => ({ version }),
+		order: 'rules.version.keyword',
+		where: (version: number) => ({ term: { 'rules.version.keyword': version } }),
 	},
 	'game.weather': {
 		validation: Joi.string(),
-		model: 'gameServerPing',
-		order: ['ping', 'weather'],
-		where: (weather: number) => ({ weather }),
+		order: 'rules.weather.keyword',
+		where: (weather: number) => ({ term: { 'rules.weather.keyword': weather } }),
 	},
 	'game.worldtime': {
 		validation: Joi.string(),
-		model: 'gameServerPing',
-		order: ['ping', 'worldtime'],
-		where: (worldtime: number) => ({ worldtime }),
+		order: 'rules.worldtime.keyword',
+		where: (worldtime: number) => ({ term: { 'rules.worldtime.keyword': worldtime } }),
 	},
 	'network.country': {
 		validation: Joi.string(),
-		model: 'gameServerPing',
-		order: ['ping', 'country'],
-		where: (country: number) => ({ country }),
+		order: 'country.keyword',
+		where: (country: number) => ({ term: { 'country.keyword': country } }),
 	},
 	'network.asn': {
 		validation: Joi.number(),
-		model: 'gameServerPing',
-		order: ['ping', 'asn'],
-		where: (asn: number) => ({ asn }),
+		order: 'asnId',
+		where: (asn: number) => ({ term: { asnId: asn } }),
 	},
 	'network.asnName': {
 		validation: Joi.string(),
-		model: 'gameServerPing',
-		order: ['ping', 'asnName'],
-		where: (asnName: number) => ({ asnName }),
+		order: 'asnName.keyword',
+		where: (asnName: number) => ({ term: { 'asnName.keyword': asnName  } }),
 	},
 	'metadata.discordGuild': {
+		type: 'sql',
 		validation: [Joi.array().items(Joi.string()).required(), Joi.string().required()],
-		model: 'gameServer',
-		order: ['discordGuild'],
+		order: 'discordGuild',
 		where: (guild: number) => ({
 			[Op.or]: [].concat(...(Array.isArray(guild) ? guild : [guild]).map(g => [
 				{ userDiscordGuild: g },
@@ -251,18 +237,12 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 
 // tslint:disable no-any
 
-function parseWhere(params: { [key: string]: string }): {
-	gameServer: { [key: string]: any };
-	gameServerPing: { [key: string]: any };
-} {
-	const where = {
-		gameServer: [],
-		gameServerPing: [],
-	};
+function parseWhere(params: { [key: string]: string }): any[] {
+	const where = [];
 
 	for (const [key, value] of Object.entries(params)) {
-		if (dynamicQueries[key]) {
-			where[dynamicQueries[key].model].push(dynamicQueries[key].where(value));
+		if (dynamicQueries[key] && dynamicQueries[key].type !== 'sql') {
+			where.push(dynamicQueries[key].where(value));
 		}
 	}
 
@@ -274,12 +254,32 @@ function convertColumn(col: string): any {
 		return dynamicQueries[col].order;
 	}
 
-	return ['createdAt'];
+	return ['lastUpdatedAt'];
 }
 
-function parseQuery(payload: { [key: string]: any }, lastPing: Date): any {
+async function querySQL(query) {
+	const where = [];
+
+	for (const [key, value] of Object.entries(query)) {
+		if (dynamicQueries[key] && dynamicQueries[key].type === 'sql') {
+			where.push(dynamicQueries[key].where(value));
+		}
+	}
+
+	if (where.length === 0) {
+		return null;
+	}
+
+	const servers = await GameServer.findAll({
+		where: { [Op.and]: where },
+		attributes: ['address'],
+	});
+
+	return servers.map(i => i.address);
+}
+
+function parseQuery(payload: { [key: string]: any }, servers: string[] | null): any {
 	let queryObject = payload;
-	let lastPingedAt:  Date = lastPing;
 	let offset: number = 0;
 
 	if (payload.after) {
@@ -287,31 +287,26 @@ function parseQuery(payload: { [key: string]: any }, lastPing: Date): any {
 
 		queryObject = parsed.query;
 		offset = parsed.offset;
-		lastPingedAt = new Date(parsed.lastPingedAt);
 	}
 
 	const [col, direction] = queryObject.order.split(':');
 	const column = convertColumn(col);
-	const { gameServerPing, gameServer } = parseWhere(queryObject);
+	const where = parseWhere(queryObject);
 
-	const parsedQuery = {
-		limit: queryObject.limit,
-		offset,
-		include: {
-			model: GameServerPing,
-			where: {
-				[Op.and]: gameServerPing,
-				online: true,
-				batchPingedAt: lastPingedAt,
+	if (servers !== null) {
+		where.push({ terms: { _id: servers } });
+	}
+	const parsedQuery: SearchRequest = {
+		size: queryObject.limit,
+		from: offset,
+		sort: <any>[
+			{ [column]: direction.toLowerCase() },
+			{ _score: 'desc' },
+		],
+		query: {
+			bool: {
+				must: [...where, { exists: { field: 'rules'}}],
 			},
-		},
-		order: [[...column, direction.toUpperCase()], ['id', 'desc']],
-		where: {
-			[Op.and]: [
-				{
-					[Op.and]: gameServer,
-				},
-			],
 		},
 	};
 
@@ -325,53 +320,53 @@ function parseCursor(cursor: string): { query: { [key: string]: any }; lastId: s
 	return <{ query: { [key: string]: any }; lastId: string; lastPingedAt: string; offset: number }>jwt.verify(cursor, 'jwtSAGL');
 }
 
-function getCursor(request: any, data: { id: string }[], date: Date, offset: number): string {
+function getCursor(request: any, data: { id: string }[], offset: number): string {
 	return jwt.sign({
 		query: request,
 		lastId: data[data.length - 1].id,
-		lastPingedAt: date,
 		offset,
 	}, 'jwtSAGL');
 }
 
-export async function transformGameServer(gameServer: GameServer, getRelation = i => i.latestPing) {
-	const ping: GameServerPing = getRelation(gameServer);
-	const socials = fetchSocials(gameServer, ping);
+export async function transformGameServerEs(result: any, passedServer?: GameServer) {
+	const { _source: server } = result;
+	const gameServer = passedServer ? passedServer : await GameServer.findOne({ where: { address: server.address }});
+	const socials = fetchSocials(gameServer, server.rules.weburl);
 
 	return {
-		id: gameServer.id,
-		address: ping.address,
-		name: ping.hostname,
+		id: 'removed',
+		address: server.address,
+		name: server.hostname,
 		isSupporter: gameServer.supporter,
-		isHosted: ping.hosted,
-		isPassworded: ping.passworded,
+		isHosted: server.hosted,
+		isPassworded: server.passworded,
 		players: {
-			current: ping.onlinePlayers,
-			max: ping.maxPlayers,
-			hitSAMPLimit: ping.onlinePlayers >= 100,
-			online: ping.players !== undefined ? ping.players : undefined,
+			current: server.onlinePlayers,
+			max: server.maxPlayers,
+			hitSAMPLimit: server.onlinePlayers >= 100,
+			online: server.players !== undefined ? server.players : undefined,
 		},
 		game: {
-			language: ping.language,
-			gamemode: ping.gamemode,
-			lagcomp: ping.lagcomp,
-			mapname: ping.mapname,
-			version: ping.version,
-			weather: ping.weather,
-			worldtime: ping.worldtime,
+			language: server.rules.language ?? null,
+			gamemode: server.rules.gamemode ?? null,
+			lagcomp: server.rules.lagcomp ?? null,
+			mapname: server.rules.mapname ?? null,
+			version: server.rules.version ?? null,
+			weather: server.rules.weather ?? null,
+			worldtime: server.rules.worldtime ?? null,
 		},
 		network: {
-			country: ping.country,
-			asn: +ping.asn,
-			asnName: ping.asnName,
+			country: server.country,
+			asn: server.asnId,
+			asnName: server.asnName,
 		},
 		metadata: {
 			icon: gameServer.userIcon ?? gameServer.assumedIcon ?? null,
 			discordGuild: gameServer.userDiscordGuild ?? gameServer.assumedDiscordGuild ?? null,
 			socials,
 		},
-		isOnline: ping.batchPingedAt >= new Date(+new Date() - 1000 * 60 * 30),
-		snapshotAt: ping.batchPingedAt,
+		isOnline: server.lastOnlineAt >= new Date(+new Date() - 1000 * 60 * 30),
+		snapshotAt: server.lastUpdatedAt,
 	};
 }
 
@@ -406,35 +401,22 @@ export const routes: RouterFn = (router: Server): void => {
 			},
 		},
 		async handler(request: Request, h: ResponseToolkit) {
-			const lastPing = await getLastPing();
-			const query = parseQuery(<any>request.query, lastPing);
+			const addresses = await querySQL(request.query);
+			const query = parseQuery(<any>request.query, addresses);
+			console.log(JSON.stringify(query.parsedQuery, null, 4));
+			const results = await elasticsearch.search(query.parsedQuery)
+				.then(async i => {
+					const servers = await GameServer.findAll({ where: { address: i.hits.hits.map(r => r._id)}});
 
-			const results = await GameServer.findAll({
-				...query.parsedQuery,
-				attributes: [
-					'id', 'supporter', 'createdAt', 'userIcon', 'userSocials',
-					'assumedIcon', 'assumedDiscordGuild', 'assumedSocials', 'userDiscordGuild',
-					'userDiscordInvite',
-				],
-				include: [{
-					model: GameServerPing,
-					as: 'ping',
-					...query.parsedQuery.include,
-					attributes: [
-						'address', 'hostname', 'gamemode', 'language',
-						'passworded', 'onlinePlayers', 'maxPlayers', 'weburl',
-						'lagcomp', 'mapname', 'version', 'weather', 'worldtime',
-						'asn', 'asnName', 'country', 'hosted', 'batchPingedAt',
-					],
-				}],
-			}).then(i => Promise.all(i.map(j => transformGameServer(j, i => i.ping[0]))));
+					return Promise.all(i.hits.hits.map(res => transformGameServerEs(res, servers.find(r => r.address === res._id))));
+				});
 
 			const endpoint = `${config.get('web.publicUrl')}/v1/servers`;
 
 			if (results.length >= 1) {
 				return h
 					.response(results)
-					.header('Link', `<${endpoint}?after=${getCursor(request.query, results, lastPing, results.length + +query.parsedQuery.offset)}>; rel="next"`);
+					.header('Link', `<${endpoint}?after=${getCursor(request.query, results, results.length + +query.parsedQuery.offset)}>; rel="next"`);
 			}
 
 			return results;

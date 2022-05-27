@@ -71,7 +71,7 @@ export function getGameServerPing(pingedAt: Date, server: IQueryValue): any {
  * @param since Time to look for files after.
  */
 export function getFiles(since: Date): Promise<string | undefined> {
-	return S3.listFiles('polls/')
+	return S3.listFiles('polls-v2/')
 		.then(res => {
 			return res.map<[Date, string]>(i => {
 				const [filename] = i.split('/').reverse();

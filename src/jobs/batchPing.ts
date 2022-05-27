@@ -107,13 +107,13 @@ function queryServer(address: string, hosted: boolean, openmp: boolean): Promise
 					},
 				};
 			});
-	}, { retries: 4 })
+		}, { retries: 4 })
 		.catch(() => {
 			Logger.warn('Failed to ping server.', { id: `${hostname}:${port}` });
 			const offset = Math.round(Math.random() * (1000 * 60 * 60 * 3));
-			GameServerBlacklist.create({ address, expiresAt: new Date(new Date()(1000 * 60 * 60 * 3)  offset) })
+			GameServerBlacklist.create({ address, expiresAt: new Date(+new Date() + (1000 * 60 * 60 * 3) + offset) })
 				.catch(() => {
-					// hmm
+						// hmm
 				});
 
 			return {

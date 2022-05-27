@@ -347,8 +347,8 @@ export async function transformGameServerEs(result: any, passedServer?: GameServ
 			online: server.players !== undefined ? server.players : undefined,
 		},
 		game: {
-			language: server.rules.language ?? null,
-			gamemode: server.rules.gamemode ?? null,
+			language: server.language ?? null,
+			gamemode: server.gamemode ?? null,
 			lagcomp: server.rules.lagcomp ?? null,
 			mapname: server.rules.mapname ?? null,
 			version: server.rules.version ?? null,

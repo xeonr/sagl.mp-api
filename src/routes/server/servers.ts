@@ -305,7 +305,7 @@ function parseQuery(payload: { [key: string]: any }, servers: string[] | null): 
 		],
 		query: {
 			bool: {
-				must: [...where, { exists: { field: 'rules'}}],
+				must: [...where, { exists: { field: 'rules' } }, { range: { lastOnlineAt: { gte: 'now-12h/d' } } }],
 			},
 		},
 	};
@@ -365,7 +365,8 @@ export async function transformGameServerEs(result: any, passedServer?: GameServ
 			discordGuild: gameServer.userDiscordGuild ?? gameServer.assumedDiscordGuild ?? null,
 			socials,
 		},
-		isOnline: server.lastOnlineAt >= new Date(+new Date() - 1000 * 60 * 30),
+		isOnline: new Date(server.lastOnlineAt) >= new Date(+new Date() - 1000 * 60 * 30),
+		lastOnlineAt: server.lastOnlineAt,
 		snapshotAt: server.lastUpdatedAt,
 	};
 }

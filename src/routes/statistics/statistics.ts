@@ -11,8 +11,10 @@ async function aggregate(property: string): Promise<{ key: string; value: number
 		track_total_hits: false,
 		size: 0,
 		query: {
-			match: {
-				online: false,
+			range: {
+				lastOnlineAt: {
+					gte: 'now-12h/d',
+				},
 			},
 		},
 		aggs: {
@@ -39,8 +41,10 @@ export const routes: RouterFn = (router: Server): void => {
 				track_total_hits: false,
 				size: 0,
 				query: {
-					match: {
-						online: false,
+					range: {
+						lastOnlineAt: {
+							gte: 'now-12h/d',
+						},
 					},
 				},
 				aggs: {
@@ -100,7 +104,7 @@ export const routes: RouterFn = (router: Server): void => {
 		path: '/statistics/current/players',
 		handler: async (): Promise<Lifecycle.ReturnValue> => {
 			return elasticsearch.sql.query({
-				query: `SELECT SUM(maxPlayers), SUM(onlinePlayers), AVG(onlinePlayers) FROM "${config.get('elasticsearch.index')}"`,
+				query: `SELECT SUM(maxPlayers), SUM(onlinePlayers), AVG(onlinePlayers) FROM "${config.get('elasticsearch.index')}" WHERE "online" = true`,
 			}).then(r => {
 				const [maxPlayers, onlinePlayers, avgPlayers] = r.rows[0];
 

@@ -7,6 +7,7 @@ import { default as normalizeUrl } from 'normalize-url';
 import { Op } from 'sequelize';
 import { URL } from 'url';
 
+import { GameServerHostname } from '../../models/GameServerHostname';
 import { elasticsearch } from '../../util/Elasticsearch';
 import { RouterFn } from '../../util/Types';
 import { GameServer } from './../../models/GameServer';
@@ -117,10 +118,11 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 		validation: Joi.string(),
 		order: '_score',
 		where: (query: string) => ({
-			multi_match: {
-				query,
-				fields: ['hostname', 'address', 'gamemode'],
-				type: 'phrase',
+			simple_query_string: {
+				query: `${query}`,
+				fields: ['hostname^5', 'address^5', 'gamemode'],
+				default_operator: 'AND',
+				analyze_wildcard: true,
 			},
 		}),
 	},
@@ -328,13 +330,14 @@ function getCursor(request: any, data: { id: string }[], offset: number): string
 	}, 'jwtSAGL');
 }
 
-export async function transformGameServerEs(result: any, passedServer?: GameServer) {
+export async function transformGameServerEs(result: any, passedServer?: GameServer, hostname?: string) {
 	const { _source: server } = result;
 	const gameServer = passedServer ? passedServer : await GameServer.findOne({ where: { address: server.address }});
 	const socials = fetchSocials(gameServer, server.rules.weburl);
 
 	return {
 		id: 'removed',
+		host: hostname,
 		address: server.address,
 		name: server.hostname,
 		isSupporter: gameServer.supporter,
@@ -404,12 +407,19 @@ export const routes: RouterFn = (router: Server): void => {
 		async handler(request: Request, h: ResponseToolkit) {
 			const addresses = await querySQL(request.query);
 			const query = parseQuery(<any>request.query, addresses);
-			console.log(JSON.stringify(query.parsedQuery, null, 4));
 			const results = await elasticsearch.search(query.parsedQuery)
 				.then(async i => {
 					const servers = await GameServer.findAll({ where: { address: i.hits.hits.map(r => r._id)}});
+					const hostname = await GameServerHostname.findAll({
+						where: {
+							address: i.hits.hits.map(r => r._id),
+							verificationExpiredAt: null,
+						},
+					});
 
-					return Promise.all(i.hits.hits.map(res => transformGameServerEs(res, servers.find(r => r.address === res._id))));
+					return Promise.all(i.hits.hits.map(res => transformGameServerEs(
+						res, servers.find(r => r.address === res._id), hostname.find(r => r.address === res._id)?.name ?? res._id,
+					)));
 				});
 
 			const endpoint = `${config.get('web.publicUrl')}/v1/servers`;

@@ -4,9 +4,12 @@ import { flux, fluxDuration, fluxExpression } from '@influxdata/influxdb-client'
 import config from 'config';
 import Joi from 'joi';
 import moment, { Moment } from 'moment';
+import { Op } from 'sequelize';
 
+import { GameServerHostname } from '../../models/GameServerHostname';
 import { elasticsearch } from '../../util/Elasticsearch';
 import { influxdb } from '../../util/Influxdb';
+import { GameServer } from './../../models/GameServer';
 import { RouterFn } from './../../util/Types';
 import { transformGameServerEs } from './servers';
 
@@ -20,21 +23,35 @@ const roundTo30Minutes = (date: Moment): Moment => {
 export const routes: RouterFn = (router: Server): void => {
 	router.route({
 		method: 'GET',
-		path: '/servers/{ip}:{port}',
+		path: '/servers/{ipOrHostname}',
 		options: {
 			validate: {
 				params: {
-					ip: Joi.string().ip().required(),
-					port: Joi.number().port().required(),
+					ipOrHostname: Joi.string().required(),
 				},
 			},
 		},
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
+			const hostname = await GameServerHostname.findOne({
+				where: {
+					[Op.or]: [
+						{ name: request.params.ipOrHostname },
+						{ address: request.params.ipOrHostname },
+					],
+					verificationExpiredAt: null,
+				},
+			});
+			const gameServer = await GameServer.findOne({ where: { address: hostname?.address ?? request.params.ipOrHostname }});
+
+			if (!gameServer) {
+				throw notFound('Game server not tracked');
+			}
+
 			const result = await elasticsearch.search({
 				size: 1,
 				query: {
 					match: {
-						_id: `${request.params.ip}:${request.params.port}`,
+						_id: `${gameServer.ip}:${gameServer.port}`,
 					},
 				},
 			});
@@ -43,7 +60,7 @@ export const routes: RouterFn = (router: Server): void => {
 				throw notFound('Game server not tracked');
 			}
 
-			return transformGameServerEs(result.hits.hits[0]);
+			return transformGameServerEs(result.hits.hits[0], gameServer, hostname ? hostname.name : gameServer.address);
 		},
 	});
 

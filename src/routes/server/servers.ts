@@ -339,8 +339,8 @@ export async function transformGameServerEs(result: any, passedServer?: GameServ
 	return {
 		id: server.address,
 		host,
-		port,
-		address: `${host}:${port}`,
+		port: +port,
+		address: port === '7777' ? host : `${host}:${port}`,
 		name: server.hostname,
 		isSupporter: gameServer.supporter,
 		isHosted: server.hosted,

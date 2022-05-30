@@ -32,11 +32,18 @@ export const routes: RouterFn = (router: Server): void => {
 			},
 		},
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
+			let ipOrHostname = request.params.ipOrHostname;
+			const [host, port] = ipOrHostname.split(':');
+
+			if (port === '') {
+				ipOrHostname = `${host}:7777`;
+			}
+
 			const hostname = await GameServerHostname.findOne({
 				where: {
 					[Op.or]: [
-						{ name: request.params.ipOrHostname },
-						{ address: request.params.ipOrHostname },
+						{ name: ipOrHostname },
+						{ address: ipOrHostname },
 					],
 					verificationExpiredAt: null,
 				},

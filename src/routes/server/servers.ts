@@ -334,11 +334,13 @@ export async function transformGameServerEs(result: any, passedServer?: GameServ
 	const { _source: server } = result;
 	const gameServer = passedServer ? passedServer : await GameServer.findOne({ where: { address: server.address }});
 	const socials = fetchSocials(gameServer, server.rules.weburl);
+	const [host, port] = (hostname ?? server.address).split(':');
 
 	return {
-		id: 'removed',
-		host: hostname,
-		address: server.address,
+		id: server.address,
+		host,
+		port,
+		address: `${host}:${port}`,
 		name: server.hostname,
 		isSupporter: gameServer.supporter,
 		isHosted: server.hosted,

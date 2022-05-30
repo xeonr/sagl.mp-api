@@ -35,7 +35,7 @@ export const routes: RouterFn = (router: Server): void => {
 			let ipOrHostname = request.params.ipOrHostname;
 			const [host, port] = ipOrHostname.split(':');
 
-			if (port === '') {
+			if (!port) {
 				ipOrHostname = `${host}:7777`;
 			}
 
@@ -48,7 +48,7 @@ export const routes: RouterFn = (router: Server): void => {
 					verificationExpiredAt: null,
 				},
 			});
-			const gameServer = await GameServer.findOne({ where: { address: hostname?.address ?? request.params.ipOrHostname }});
+			const gameServer = await GameServer.findOne({ where: { address: hostname?.address ?? ipOrHostname }});
 
 			if (!gameServer) {
 				throw notFound('Game server not tracked');

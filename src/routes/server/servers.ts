@@ -1,6 +1,6 @@
 import { SearchRequest } from '@elastic/elasticsearch/lib/api/types';
 import { Request, ResponseToolkit, Server } from '@hapi/hapi';
-import config from 'config';
+import config from '@majesticfudgie/vault-config';
 import * as Joi from 'joi';
 import * as jwt from 'jsonwebtoken';
 import { default as normalizeUrl } from 'normalize-url';

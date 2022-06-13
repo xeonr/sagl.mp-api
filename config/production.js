@@ -1,39 +1,39 @@
 module.exports = {
 	"db": {
-		"database": process.env.MYSQL_DB_DB,
+		"database": "vault:sagl/database/mysql-stats.databases.serverApi",
 		"dialect": "mysql",
-		"username": process.env.MYSQL_DB_USER,
-		"password": process.env.MYSQL_DB_PASS,
-		"host": process.env.MYSQL_DB_HOST,
+		"username": "vault:sagl/database/mysql-stats.username",
+		"password": "vault:sagl/database/mysql-stats.password",
+		"host": "vault:sagl/database/mysql-stats.host",
 	},
 	"redis": {
-		"host": process.env.REDIS_HOST,
+		"host": "vault:sagl/database/redis.host",
 		"keyPrefix": "saglServer:",
-		"port": process.env.REDIS_PORT,
-		"password": process.env.REDIS_PASS
+		"port": "vault:sagl/database/redis.port",
+		"password": "vault:sagl/database/redis.password",
 	},
 	"influxdb": {
-		"url": "http://infra.lon1.xeonr.io:8086",
-		"token": process.env.INFLUXDB_TOKEN,
+		"url": "vault:sagl/database/influxdb.url",
+		"token": "vault:sagl/database/influxdb.token",
 		"bucket": "sagl-servers-prod",
 		"org": "SA:GL",
 	},
 	"discord": {
-		"key": process.env.DISCORD_TOKEN
+		"key": "vault:sagl/server-api.discord.token"
 	},
 	"storage": {
 		"bucket": "sagl-server-polls",
-		"auth": undefined
+		"auth": "vault:sagl/server-api.gcs",
 	},
 	"web": {
 		"publicUrl": "https://server-api.sagl.app",
 		"host": "0.0.0.0",
-		"port": process.env.PORT,
+		"port": 8080,
 	},
 	"elasticsearch": {
-		"url": process.env.ELASTICSEARCH_URL,
-		"index": process.env.ELASTICSEARCH_INDEX,
-		"username": process.env.ELASTICSEARCH_USERNAME,
-		"password": process.env.ELASTICSEARCH_PASSWORD,
+		"url": "vault:sagl/database/elastic.url",
+		"index": "vault:sagl/database/elastic.index",
+		"username": "vault:sagl/database/elastic.username",
+		"password": "vault:sagl/database/elastic.password",
 	}
 }

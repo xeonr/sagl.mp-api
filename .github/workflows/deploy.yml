@@ -13,9 +13,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v2
-      with:
-        token: ${{ secrets.GH_ACCESS_TOKEN }}
-        submodules: recursive
 
     - name: Setup Cloud SDK
       uses: google-github-actions/setup-gcloud@v0.2.0
@@ -31,17 +28,23 @@ jobs:
         docker build --build-arg NPM_TOKEN=${{secrets.GH_SECRET}} -t europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api:${{  github.run_number }} .
         docker push europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api:${{  github.run_number }}
 
-    - name: Deploy SAGL
-      run: |-
-        gcloud run deploy sagl-server-api \
-          --region europe-west1 \
-          --image europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api:${{  github.run_number }} \
-          --platform "managed" \
-          --quiet
+    - uses: azure/k8s-set-context@v1
+      with:
+        method: kubeconfig
+        kubeconfig: "${{ secrets.PROD_KUBECONFIG }}"
+
+    - uses: Azure/k8s-deploy@v3.1
+      with:
+        namespace: "xeonr-prod-sagl"
+        imagepullsecrets: gcr-docker
+        strategy: none
+        manifests: |
+          infra/production.yml
+        images: "europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api:${{  github.run_number }}"
 
     - name: Discord notification
       env:
         DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
       uses: Ilshidur/action-discord@master
       with:
-        args: '🚀 ${{github.actor}} successfully deployed the SA:GL Server API (Release `${{github.run_number}}`).'
+        args: '🚀 ${{github.actor}} successfully deployed the SA:GL Server API (Release `${{  github.run_number }}`).'

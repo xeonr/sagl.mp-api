@@ -1,6 +1,6 @@
 import { AggregationsStringTermsAggregate } from '@elastic/elasticsearch/lib/api/types';
 import { Lifecycle, Server } from '@hapi/hapi';
-import config from 'config';
+import config from '@majesticfudgie/vault-config';
 
 import { elasticsearch } from '../../util/Elasticsearch';
 import { RouterFn } from './../../util/Types';

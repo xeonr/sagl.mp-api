@@ -1,4 +1,4 @@
-import config from 'config';
+import config from '@majesticfudgie/vault-config';
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { join } from 'path';
 

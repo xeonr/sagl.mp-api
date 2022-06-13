@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    product: sagl
+    app: server-api
+  name: server-api
+  namespace: xeonr-prod-sagl
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: server-api
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        product: sagl
+        app: server-api
+      name: server-api
+    spec:
+      serviceAccountName: vault-auth
+      containers:
+        - image: europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: VAULT_ADDR
+              value: http://vault-active.vault.svc.cluster.local:8200
+            - name: VAULT_KUBERNETES_ROLE
+              value: sagl-prod-server-api
+            - name: ELASTIC_APM_SERVICE_NAME
+              value: sagl-server-api
+            - name: ELASTIC_APM_SERVER_URL
+              value: http://infra.lon1.xeonr.io:8200
+            - name: ELASTIC_APM_CAPTURE_BODY
+              value: all
+            - name: ELASTIC_APM_LOG_UNCAUGHT_EXCEPTIONS
+              value: "true"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+          name: server-api
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    app: server-api
+  name: server-api
+  namespace: xeonr-prod-sagl
+spec:
+  type: ClusterIP
+  selector:
+    app: server-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: server-api
+  namespace: xeonr-prod-sagl
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - kind: Rule
+      match: Host(`server-api.sagl.app`)
+      priority: 10
+      services:
+        - name: server-api
+          port: 80

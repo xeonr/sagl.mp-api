@@ -1,7 +1,7 @@
 import { notFound } from '@hapi/boom';
 import { Lifecycle, Request, Server } from '@hapi/hapi';
 import { flux, fluxDuration, fluxExpression } from '@influxdata/influxdb-client';
-import config from 'config';
+import config from '@majesticfudgie/vault-config';
 import Joi from 'joi';
 import moment, { Moment } from 'moment';
 import { Op } from 'sequelize';

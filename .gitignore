@@ -3,3 +3,4 @@ config/*
 sql.db
 package-lock.json
 dist/
+.vault-overrides.json

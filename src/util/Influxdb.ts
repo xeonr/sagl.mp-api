@@ -1,5 +1,5 @@
 import { InfluxDB } from '@influxdata/influxdb-client';
-import config from 'config';
+import config from '@majesticfudgie/vault-config';
 
 export const influxdb = new InfluxDB({
 	url: config.get('influxdb.url'),

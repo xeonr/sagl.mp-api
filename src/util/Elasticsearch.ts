@@ -1,5 +1,5 @@
 import {  Client } from '@elastic/elasticsearch';
-import config from 'config';
+import config from '@majesticfudgie/vault-config';
 
 export const elasticsearch = new Client({
 	node: config.get('elasticsearch.url'),

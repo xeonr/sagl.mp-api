@@ -1,4 +1,4 @@
-import c from 'config';
+import c from '@majesticfudgie/vault-config';
 import PQueue from 'p-queue';
 import { get } from 'request-promise';
 

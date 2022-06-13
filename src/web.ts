@@ -14,7 +14,9 @@ const server: Server = new Server({
 	host: config.get('web.host'),
 	port: config.get('web.port'),
 	routes: {
-		cors: true,
+		cors: {
+			headers: ['traceparent', 'tracecontext']
+		},
 		validate: {
 			failAction: (_: Request, __: ResponseToolkit, err?: Error): Lifecycle.ReturnValue => {
 				throw err;

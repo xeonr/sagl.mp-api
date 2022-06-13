@@ -37,7 +37,7 @@ spec:
             - name: ELASTIC_APM_SERVICE_NAME
               value: sagl-server-api
             - name: ELASTIC_APM_SERVER_URL
-              value: http://infra.lon1.xeonr.io:8200
+              value: http://elastic.kube-system:8200
             - name: ELASTIC_APM_CAPTURE_BODY
               value: all
             - name: ELASTIC_APM_LOG_UNCAUGHT_EXCEPTIONS

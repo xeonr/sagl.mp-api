@@ -64,7 +64,7 @@ export const routes: RouterFn = (router: Server): void => {
 				throw notFound('Game server not tracked');
 			}
 
-			return transformGameServerEs(result._source, gameServer, hostname ? hostname.name : gameServer.address);
+			return transformGameServerEs(result, gameServer, hostname ? hostname.name : gameServer.address);
 		},
 	});
 

@@ -54,20 +54,17 @@ export const routes: RouterFn = (router: Server): void => {
 				throw notFound('Game server not tracked');
 			}
 
-			const result = await elasticsearch.search({
-				size: 1,
-				query: {
-					match: {
-						_id: `${gameServer.ip}:${gameServer.port}`,
-					},
-				},
+			const result = await elasticsearch.get({
+				id: `${gameServer.ip}:${gameServer.port}`,
+				index: config.get('elasticsearch.index'),
+
 			});
 
-			if (result.hits.hits.length < 1) {
+			if (!result.found) {
 				throw notFound('Game server not tracked');
 			}
 
-			return transformGameServerEs(result.hits.hits[0], gameServer, hostname ? hostname.name : gameServer.address);
+			return transformGameServerEs(result._source, gameServer, hostname ? hostname.name : gameServer.address);
 		},
 	});
 

@@ -299,6 +299,7 @@ function parseQuery(payload: { [key: string]: any }, servers: string[] | null): 
 		where.push({ terms: { _id: servers } });
 	}
 	const parsedQuery: SearchRequest = {
+		index: config.get('elasticsearch.index'),
 		size: queryObject.limit,
 		from: offset,
 		sort: <any>[

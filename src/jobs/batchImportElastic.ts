@@ -114,7 +114,7 @@ const doStuff = (async () => {
 				sacnr: server.sacnr ?? false,
 				openmp: server.openmp ?? false,
 				ip: server.ip.address,
-				ipLocation: server.ip.latitude === null || server.ip.longitude === null? {
+				ipLocation: server.ip.latitude !== null && server.ip.longitude !== null? {
 					latitude: server.ip.latitude,
 					longitude: server.ip.longitude,
 				} : null,

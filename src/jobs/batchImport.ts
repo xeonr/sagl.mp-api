@@ -95,11 +95,11 @@ async function seedDatabase(pingedAt: Date, queryServers: IQueryValue[]): Promis
 		const meta = server.payload === null ? {
 			lastFailedPing: pingedAt,
 		} : {
-				lastSuccessfulPing: pingedAt,
-				lastPingId: ids.find(i => i.address === server.hostname).id,
-				assumedDiscordGuild: server.guild?.id ?? null,
-				assumedIcon: server.guild?.avatar  ??  null,
-			};
+			lastSuccessfulPing: pingedAt,
+			lastPingId: ids.find(i => i.address === server.hostname).id,
+			assumedDiscordGuild: server.guild?.id ?? null,
+			assumedIcon: server.guild?.avatar ?? null,
+		};
 
 		const upsertData = {
 			ip: server.ip.address,
@@ -161,7 +161,7 @@ const doStuff = (async () => {
 	const fileAt = new Date(latestFile.split('/').reverse()[0].split('.json.gz')[0]);
 	const payload: IFileContents = JSON.parse(file);
 
-	if ((await GameServerPing.count({ where: { batchPingedAt: fileAt }})) >= 1) {
+	if ((await GameServerPing.count({ where: { batchPingedAt: fileAt } })) >= 1) {
 		Logger.warn('Already ingested data, skipping!');
 
 		return;

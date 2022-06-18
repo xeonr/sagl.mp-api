@@ -1,4 +1,4 @@
-import { Asn, CountryRecord } from '@maxmind/geoip2-node';
+import { Asn, CountryRecord, LocationRecord } from '@maxmind/geoip2-node';
 import { ISAMPQuery, query } from '@xeonr/samp-query';
 import got from 'got';
 import { pick } from 'lodash';
@@ -88,7 +88,7 @@ function queryServer(address: string, hosted: boolean, openmp: boolean): Promise
 	} catch (e) { }
 
 	return pRetry(() => {
-		return query({ host: hostname, port: +port, timeout: 5000 })
+		return query({ host: hostname, port: +port, timeout: 2000 })
 			.then((response) => {
 				Logger.info('Pinged server.', { id: `${hostname}:${port}` });
 
@@ -104,6 +104,8 @@ function queryServer(address: string, hosted: boolean, openmp: boolean): Promise
 						asn: pick(asn, ['autonomousSystemOrganization', 'autonomousSystemNumber']),
 						country: (<CountryRecord>city.country).isoCode,
 						city: (<CountryRecord>city.city).names ? (<CountryRecord>city.city).names.en : null,
+						latitude: (<LocationRecord>city.location) ? (<LocationRecord>city.location).latitude : null,
+						longitude: (<LocationRecord>city.location) ? (<LocationRecord>city.location).longitude : null,
 					},
 				};
 			});
@@ -140,7 +142,7 @@ function queryServer(address: string, hosted: boolean, openmp: boolean): Promise
 	const { servers, openmp, hosted, blacklisted } = await getServers();
 	Logger.info('Fetched servers', { count: servers.length });
 
-	const queue = new PQueue({ concurrency: 20 });
+	const queue = new PQueue({ concurrency: 30 });
 	let serverResults: IQueryValue[] = [];
 
 	queue.addAll(servers.map(srv => () => {

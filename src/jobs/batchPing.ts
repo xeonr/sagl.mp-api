@@ -22,7 +22,7 @@ export interface IQueryValue {
 	sacnr?: boolean;
 	openmp?: boolean;
 	payload: ISAMPQuery;
-	ip: { address: string; asn: Asn; country: string; city: string | null };
+	ip: { address: string; asn: Asn; country: string; city: string | null; latitude: number | null; longitude: number | null };
 	guild?: IPartialGuild;
 }
 
@@ -130,6 +130,8 @@ function queryServer(address: string, hosted: boolean, openmp: boolean): Promise
 					asn: pick(asn, ['autonomousSystemOrganization', 'autonomousSystemNumber']),
 					country: (<CountryRecord>city.country).isoCode,
 					city: (<CountryRecord>city.city).names ? (<CountryRecord>city.city).names.en : null,
+					latitude: (<LocationRecord>city.location) ? (<LocationRecord>city.location).latitude : null,
+					longitude: (<LocationRecord>city.location) ? (<LocationRecord>city.location).longitude : null,
 				},
 			};
 		});

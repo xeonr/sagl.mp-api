@@ -439,10 +439,8 @@ export const routes: RouterFn = (router: Server): void => {
 
 			let city = null;
 
-			console.log('GOT HEADERS', request.headers);
 			try {
 				const geoip = request.headers['x-geo-ip'] ?? request.headers['cf-connecting-ip'] ?? request.info.remoteAddress;
-				console.log('looking up', geoip)
 
 				city = lookupIP(geoip)?.city;
 			} catch(e) {

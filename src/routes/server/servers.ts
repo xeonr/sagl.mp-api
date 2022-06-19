@@ -307,7 +307,6 @@ function parseQuery(payload: { [key: string]: any }, servers: string[] | null, l
 
 	const sort = [];
 
-
 	if (column !== 'relevance') {
 		sort.push(column === 'distance' ? {
 			"_geo_distance": {
@@ -439,7 +438,7 @@ export const routes: RouterFn = (router: Server): void => {
 			let city = null;
 
 			try {
-				city = lookupIP(request.headers['cf-connecting-ip'] ?? request.info.remoteAddress)?.city;
+				city = lookupIP(request.headers['Cf-Connecting-Ip'] ?? request.info.remoteAddress)?.city;
 			} catch(e) {
 				//
 			}

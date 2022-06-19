@@ -1,6 +1,7 @@
 import { SearchRequest } from '@elastic/elasticsearch/lib/api/types';
 import { Request, ResponseToolkit, Server } from '@hapi/hapi';
 import config from '@majesticfudgie/vault-config';
+import { LocationRecord } from '@maxmind/geoip2-node';
 import * as Joi from 'joi';
 import * as jwt from 'jsonwebtoken';
 import { default as normalizeUrl } from 'normalize-url';
@@ -9,6 +10,7 @@ import { URL } from 'url';
 
 import { GameServerHostname } from '../../models/GameServerHostname';
 import { elasticsearch } from '../../util/Elasticsearch';
+import { lookupIP } from '../../util/MaxMind';
 import { RouterFn } from '../../util/Types';
 import { GameServer } from './../../models/GameServer';
 
@@ -85,7 +87,7 @@ function numericQuery(key: string, value: string) {
 
 	if (split.length === 2 && types.includes(split[0])) {
 		if (split[0] === 'eq') {
-			return { term: { [key]: value }};
+			return { term: { [key]: value } };
 		}
 
 		if (split[0] === 'bt') {
@@ -103,7 +105,7 @@ function numericQuery(key: string, value: string) {
 		};
 	}
 
-	return { term: { [key]: value }};
+	return { term: { [key]: value } };
 }
 
 export interface IDynamicQuery {
@@ -120,7 +122,7 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 		where: (query: string) => ({
 			simple_query_string: {
 				query: `${query}`,
-				fields: ['hostname^5', 'address^5', 'gamemode'],
+				fields: ['hostname^5', 'address^5'],
 				default_operator: 'AND',
 				analyze_wildcard: true,
 			},
@@ -166,12 +168,12 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 	'players.current': {
 		validation: Joi.string().regex(/^((gt|lt|gte|lte|eq|bt):)?[0-9]+(-[0-9]+)?$/),
 		order: 'onlinePlayers',
-		where: (currentPlayers: number) =>  numericQuery('onlinePlayers', String(currentPlayers)),
+		where: (currentPlayers: number) => numericQuery('onlinePlayers', String(currentPlayers)),
 	},
 	'players.max': {
 		validation: Joi.string().regex(/^((gt|lt|gte|lte|eq|bt):)?[0-9]+(-[0-9]+)?$/),
 		order: 'maxPlayers',
-		where: (maxPlayers: number) =>  numericQuery('maxPlayers', String(maxPlayers)),
+		where: (maxPlayers: number) => numericQuery('maxPlayers', String(maxPlayers)),
 	},
 
 	'game.language': {
@@ -222,7 +224,7 @@ const dynamicQueries: { [key: string]: IDynamicQuery } = {
 	'network.asnName': {
 		validation: Joi.string(),
 		order: 'asnName.keyword',
-		where: (asnName: number) => ({ term: { 'asnName.keyword': asnName  } }),
+		where: (asnName: number) => ({ term: { 'asnName.keyword': asnName } }),
 	},
 	'metadata.discordGuild': {
 		type: 'sql',
@@ -256,6 +258,10 @@ function convertColumn(col: string): any {
 		return dynamicQueries[col].order;
 	}
 
+	if (['distance', 'relevance'].includes(col)) {
+		return col;
+	}
+
 	return ['lastUpdatedAt'];
 }
 
@@ -280,7 +286,7 @@ async function querySQL(query) {
 	return servers.map(i => i.address);
 }
 
-function parseQuery(payload: { [key: string]: any }, servers: string[] | null): any {
+function parseQuery(payload: { [key: string]: any }, servers: string[] | null, location: { latitude: number; longitude: number }): any {
 	let queryObject = payload;
 	let offset: number = 0;
 
@@ -298,14 +304,34 @@ function parseQuery(payload: { [key: string]: any }, servers: string[] | null): 
 	if (servers !== null) {
 		where.push({ terms: { _id: servers } });
 	}
+
+	const sort = [];
+
+
+	if (column !== 'relevance') {
+		sort.push(column === 'distance' ? {
+			"_geo_distance": {
+				"ipLocation": {
+					"lat": location.latitude ?? 0,
+					"lon": location.longitude ?? 0
+				},
+				"order": direction.toLowerCase(),
+				"unit": "mi"
+			}
+		} : { [column]: direction.toLowerCase() });
+	}
+
+	if (column === 'relevance') {
+		sort.push({ '_score': direction.toLowerCase() });
+	} else {
+		sort.push({ '_score': 'desc' });
+	}
+
 	const parsedQuery: SearchRequest = {
 		index: config.get('elasticsearch.index'),
 		size: queryObject.limit,
 		from: offset,
-		sort: <any>[
-			{ [column]: direction.toLowerCase() },
-			{ _score: 'desc' },
-		],
+		sort: sort,
 		query: {
 			bool: {
 				must: [...where, { exists: { field: 'rules' } }, { range: { lastOnlineAt: { gte: 'now-12h/d' } } }],
@@ -333,7 +359,7 @@ function getCursor(request: any, data: { id: string }[], offset: number): string
 
 export async function transformGameServerEs(result: any, passedServer?: GameServer, hostname?: string) {
 	const { _source: server } = result;
-	const gameServer = passedServer ? passedServer : await GameServer.findOne({ where: { address: server.address }});
+	const gameServer = passedServer ? passedServer : await GameServer.findOne({ where: { address: server.address } });
 	const socials = fetchSocials(gameServer, server.rules.weburl);
 	const [host, port] = (hostname ?? server.address).split(':');
 
@@ -388,7 +414,7 @@ function getValidator() {
 }
 
 function getSort() {
-	return new RegExp(`(${Object.keys(dynamicQueries).join('|')}|createdAt):(asc|desc)`);
+	return new RegExp(`(${Object.keys(dynamicQueries).join('|')}|distance|relevance|createdAt):(asc|desc)`);
 }
 
 export const routes: RouterFn = (router: Server): void => {
@@ -409,10 +435,23 @@ export const routes: RouterFn = (router: Server): void => {
 		},
 		async handler(request: Request, h: ResponseToolkit) {
 			const addresses = await querySQL(request.query);
-			const query = parseQuery(<any>request.query, addresses);
+
+			let city = null;
+
+			try {
+				city = lookupIP(request.headers['cf-connecting-ip'] ?? request.info.remoteAddress)?.city;
+			} catch(e) {
+				//
+			}
+
+			const query = parseQuery(<any>request.query, addresses, {
+				latitude: (<LocationRecord>city?.location) ? (<LocationRecord>city?.location).latitude : null,
+				longitude: (<LocationRecord>city?.location) ? (<LocationRecord>city?.location).longitude : null,
+			});
+
 			const results = await elasticsearch.search(query.parsedQuery)
 				.then(async i => {
-					const servers = await GameServer.findAll({ where: { address: i.hits.hits.map(r => r._id)}});
+					const servers = await GameServer.findAll({ where: { address: i.hits.hits.map(r => r._id) } });
 					const hostname = await GameServerHostname.findAll({
 						where: {
 							address: i.hits.hits.map(r => r._id),

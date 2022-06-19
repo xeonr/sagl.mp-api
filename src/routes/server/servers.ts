@@ -338,6 +338,8 @@ function parseQuery(payload: { [key: string]: any }, servers: string[] | null, l
 		},
 	};
 
+	console.log(JSON.stringify(parsedQuery, null, 4));
+
 	return {
 		rawQuery: queryObject,
 		parsedQuery,

@@ -441,7 +441,7 @@ export const routes: RouterFn = (router: Server): void => {
 
 			console.log('GOT HEADERS', request.headers);
 			try {
-				city = lookupIP(request.headers['Cf-Connecting-Ip'] ?? request.info.remoteAddress)?.city;
+				city = lookupIP(request.headers['x-geo-ip'] ?? request.headers['cf-connecting-ip'] ?? request.info.remoteAddress)?.city;
 			} catch(e) {
 				//
 			}

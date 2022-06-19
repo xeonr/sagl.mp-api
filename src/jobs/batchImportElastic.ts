@@ -1,3 +1,4 @@
+import { IQueryValue } from './../cronjobs/crawler/query';
 import config from '@majesticfudgie/vault-config';
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { join } from 'path';
@@ -5,7 +6,9 @@ import { join } from 'path';
 import { elasticsearch } from '../util/Elasticsearch';
 import { Logger } from '../util/Logger';
 import { S3 } from '../util/S3';
-import { IFileContents } from './batchPing';
+export interface IFileContents {
+	servers: IQueryValue[];
+}
 
 /**
  * Returns the timestamp of the last imported ping run.

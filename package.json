@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "vault-config && ts-node .",
+    "start": "vault-config && ts-node src/server",
     "ping": "vault-config && ts-node src/jobs/batchPing",
     "import": "vault-config && ts-node src/jobs/batchImport",
     "build": "tsc --project .",

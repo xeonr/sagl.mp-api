@@ -1,5 +1,6 @@
 import { Point } from '@influxdata/influxdb-client';
 import { pick } from 'lodash';
+import { IQueryValue } from '../cronjobs/crawler/query';
 
 import { db } from '../util/DB';
 import { getWriter } from '../util/Influxdb';
@@ -7,7 +8,10 @@ import { S3 } from '../util/S3';
 import { GameServer } from './../models/GameServer';
 import { GameServerPing } from './../models/GameServerPing';
 import { Logger } from './../util/Logger';
-import { IFileContents, IQueryValue } from './batchPing';
+
+export interface IFileContents {
+	servers: IQueryValue[];
+}
 
 /**
  * Returns the timestamp of the last imported ping run.

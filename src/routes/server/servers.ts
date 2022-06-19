@@ -349,8 +349,10 @@ function parseCursor(cursor: string): { query: { [key: string]: any }; lastId: s
 }
 
 function getCursor(request: any, data: { id: string }[], offset: number): string {
+	const req = { ...request, after: undefined };
+
 	return jwt.sign({
-		query: request,
+		query: req,
 		lastId: data[data.length - 1].id,
 		offset,
 	}, 'jwtSAGL');
@@ -468,7 +470,7 @@ export const routes: RouterFn = (router: Server): void => {
 			if (results.length >= 1) {
 				return h
 					.response(results)
-					.header('Link', `<${endpoint}?after=${getCursor(request.query, results, results.length + +query.parsedQuery.offset)}>; rel="next"`);
+					.header('Link', `<${endpoint}?after=${getCursor(query.rawQuery, results, results.length + +query.parsedQuery.from)}>; rel="next"`);
 			}
 
 			return results;

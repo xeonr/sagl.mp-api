@@ -8,8 +8,8 @@ export let asn: ReaderModel;
 export let city: ReaderModel;
 
 (async () => {
-	asn = await Reader.open(join(__dirname, '../db/GeoLite2-ASN.mmdb'));
-	city = await Reader.open(join(__dirname, '../db/GeoLite2-City.mmdb'));
+	asn = await Reader.open(join(__dirname, '../../db/GeoLite2-ASN.mmdb'));
+	city = await Reader.open(join(__dirname, '../../db/GeoLite2-City.mmdb'));
 })().catch((e: Error) => { Logger.error('Unable to load GeoIP DB', e.message); });
 
 export function lookupIP(ip: string): { asn: Asn; city: City } {

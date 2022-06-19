@@ -41,6 +41,17 @@ export const routes: RouterFn = (router: Server): void => {
 		method: 'GET',
 		path: '/statistics/geo',
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
+			let city = null;
+
+			try {
+				const geoip = request.headers['x-geo-ip'] ?? request.headers['cf-connecting-ip'] ?? request.info.remoteAddress;
+
+				city = lookupIP(geoip)?.city;
+			} catch (e) {
+				console.log(e);
+				//
+			}
+
 			const results = await elasticsearch.search({
 				index: config.get('elasticsearch.index'),
 				"query": {
@@ -64,8 +75,8 @@ export const routes: RouterFn = (router: Server): void => {
 					{
 						"_geo_distance": {
 							"ipLocation": {
-								"lat": 52.9044,
-								"lon": -1.2326
+								"lat": (<LocationRecord>city?.location) ? (<LocationRecord>city?.location).latitude : 0,
+								"lon": (<LocationRecord>city?.location) ? (<LocationRecord>city?.location).longitude : 0,
 							},
 							"order": "asc",
 							"unit": "mi"
@@ -83,19 +94,8 @@ export const routes: RouterFn = (router: Server): void => {
 				"size": 2000
 			});
 
-			let city = null;
-
-			try {
-				const geoip = request.headers['x-geo-ip'] ?? request.headers['cf-connecting-ip'] ?? request.info.remoteAddress;
-
-				city = lookupIP(geoip)?.city;
-			} catch (e) {
-				console.log(e);
-				//
-			}
-
 			return {
-				current: [(<LocationRecord>city?.location) ? (<LocationRecord>city?.location).latitude : 52.9044, (<LocationRecord>city?.location) ? (<LocationRecord>city?.location).longitude : -1.2326],
+				current: [(<LocationRecord>city?.location) ? (<LocationRecord>city?.location).latitude : 0, (<LocationRecord>city?.location) ? (<LocationRecord>city?.location).longitude : 0],
 				servers: results.hits.hits.map(hit => ({
 					id: hit._id,
 					hostname: hit.fields['hostname'][0],

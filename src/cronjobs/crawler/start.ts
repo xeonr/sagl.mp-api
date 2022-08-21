@@ -116,8 +116,7 @@ Promise.resolve()
 			})
 			.then(async (success) => {
 				await gateway.pushAdd({ jobName: 'sagl-crawler' });
-				trans.result = success ? 'success' : 'error';
-
+				trans.end(success ? 'success' : 'error')
 				try {
 					await apm.flush();
 				} catch(e) {

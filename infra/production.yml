@@ -95,7 +95,7 @@ metadata:
   name: server-api-crawler
   namespace: xeonr-prod-sagl
 spec:
-  schedule: "*/30 * * * *"
+  schedule: "*/10 * * * *"
   concurrencyPolicy: Allow
   jobTemplate:
     spec:

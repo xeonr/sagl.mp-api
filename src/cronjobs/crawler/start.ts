@@ -108,6 +108,7 @@ Promise.resolve()
 
 		return start()
 			.catch(err => {
+				console.warn('Unable to crawl', err);
 				runtime.set({ status: 'failed' }, +new Date() - +startAt)
 
 				return false;

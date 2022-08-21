@@ -8,6 +8,7 @@ import { pick } from 'lodash';
 import { inferSocials } from '../../routes/server/servers';
 import { Logger } from '../../util/Logger';
 import * as ping from 'ping';
+import { getCounter, getHistogram } from '../../util/metrics';
 
 export interface IQueryValue {
 	hostname: string;
@@ -28,10 +29,20 @@ export interface IQueryValue {
  */
 function querySAMP(address: string): Promise<ISAMPQuery> {
 	const [hostname, port] = address.split(':');
+	const queryTime = getHistogram('gameserver_querytime')
+	const query = getCounter('gameserver_query', ['status'])
 
+	const now = new Date();
 	return pRetry((retry: number) => {
 		return querySamp({ host: hostname, port: +port, timeout: 2000 })
+			.then(res => {
+				query.inc({ status: 'success'})
+				queryTime.observe(+new Date() - +now)
+
+				return res;
+			})
 			.catch(err => {
+				query.inc({ status: 'timeout'})
 				Logger.debug('Failed to query server', {
 					retry,
 					hostname, port

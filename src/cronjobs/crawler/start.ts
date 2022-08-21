@@ -1,14 +1,22 @@
+// require('elastic-apm-node').start({ });
+
+import { gateway } from './../../util/metrics';
+import apm from 'elastic-apm-node';
 import '../../util/DB';
-import { S3 } from './../../util/S3';
 import { Logger } from '../../util/Logger';
 import { getQueryableServers, IQueryableServers } from './gather';
 import PQueue from 'p-queue';
 import { IQueryValue, query } from './query';
 import { getFilename } from './store';
-import { blacklistServers, storeServers } from './cache';
+import { getCounter, getGauge } from '../../util/metrics';
+
+const job = getGauge('job', ['type']);
+const runtime = getGauge('runtime', ['status']);
+
+const startAt = new Date();
 
 export async function start() {
-	const startAt = new Date();
+	job.set({ type: 'start' }, +new Date());
 
 	Logger.info('Starting crawler run', {
 		filename: getFilename(startAt),
@@ -23,10 +31,18 @@ export async function start() {
 	// Identify the non-blacklisted servers
 	const servers = Array.from(serverList.servers).filter(server => !serverList.blacklisted.has(server));
 
+	const loadedGauge = getGauge('servers_loaded', ['source'])
+	loadedGauge.set({ source: 'hosted' }, serverList.hosted.size)
+	loadedGauge.set({ source: 'blacklist' }, serverList.blacklisted.size)
+	loadedGauge.set({ source: 'openmp' }, serverList.openmp.size)
+	loadedGauge.set({ source: 'known' }, serverList.servers.size)
+	loadedGauge.set({ source: 'queryable' }, servers.length)
+
 	const queue = new PQueue({ concurrency: 30 });
 	const responses: IQueryValue[] = [];
 	const failed: string[] = [];
 
+	const queried = getCounter('servers_queried', ['status'])
 	// Query all available SA:MP servers..
 	await queue.addAll<Promise<void>>(servers.map(server => {
 		return () => query(server, serverList)
@@ -35,12 +51,14 @@ export async function start() {
 
 				if (!res.payload) {
 					failed.push(server);
+					queried.inc({ status: 'failed' }, 1);
 				}
 
 				Logger.info('Successfully queried for data', {
 					address: res.ip.address,
 					online: !!res.payload,
 				});
+				queried.inc({ status: 'success' }, 1);
 			})
 			.catch((err: Error) => {
 				Logger.info('Failed to query for data', {
@@ -49,12 +67,14 @@ export async function start() {
 				});
 
 				failed.push(server);
+
+				queried.inc({ status: 'exception' }, 1);
 			})
 			.then<void>(() => {
 				const totalQueried = failed.length + responses.length;
 
-				if (totalQueried % 100 === 0) {
-					console.log('Queried', totalQueried, 'out of ', servers.length)
+				if (totalQueried % 50 === 0) {
+					Logger.info(`Queried ${totalQueried} servers out of ${servers.length}`)
 				}
 
 			});
@@ -62,7 +82,7 @@ export async function start() {
 	await queue.onIdle();
 
 	// Store the results somewhere
-	await S3.upload(getFilename(startAt), JSON.stringify({ servers: responses }), 'application/json');
+	// await S3.upload(getFilename(startAt), JSON.stringify({ servers: responses }), 'application/json');
 
 	Logger.info('Completed the crawl run', {
 		filename: getFilename(startAt),
@@ -73,15 +93,35 @@ export async function start() {
 	});
 
 	// Store the servers in core db.
-	await storeServers(responses);
-	await blacklistServers(failed)
+	// await storeServers(responses);
+	// await blacklistServers(failed)
 
-	process.exit(0);
+	runtime.set({ status: 'success' }, +new Date() - +startAt)
+	job.set({ type: 'end' }, +new Date());
+
+	return true;
 }
 
-start()
-	.catch(err => {
-		console.log(err);
+Promise.resolve()
+	.then(() => {
+		const trans = apm.startTransaction('crawler', 'job')
 
-		process.exit(1);
+		return start()
+			.catch(err => {
+				runtime.set({ status: 'failed' }, +new Date() - +startAt)
+
+				return false;
+			})
+			.then(async (success) => {
+				await gateway.pushAdd({ jobName: 'sagl-crawler' });
+				trans.result = success ? 'success' : 'error';
+
+				try {
+					await apm.flush();
+				} catch(e) {
+					Logger.warn('Unable to flush apm', e);
+				} finally {
+					process.exit(success ? 0 : 1);
+				}
+			})
 	})

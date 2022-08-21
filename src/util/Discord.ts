@@ -47,7 +47,7 @@ export async function getInvite(inviteId: string): Promise<{ id: string; name: s
 				await redisPub.set(`deadInvites:${inviteId}`, 'true');
 			}
 
-			Logger.warn(e.message);
+			Logger.warn('Error fetching discord invite', e.message);
 
 			return null;
 		});

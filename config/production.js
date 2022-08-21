@@ -35,5 +35,8 @@ module.exports = {
 		"index": "vault:sagl/database/elastic.index",
 		"username": "vault:sagl/database/elastic.username",
 		"password": "vault:sagl/database/elastic.password",
+	},
+	"prometheus": {
+		"pushEndpoint": "http://pushgateway-service.monitoring.svc.cluster.local:9091"
 	}
 }

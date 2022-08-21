@@ -13,7 +13,7 @@ async function getOpenMP(): Promise<string[]> {
 			.then(r => r.body)
 			.then((r: any[]) => r.map(i => i.ip)); // tslint:disable-line
 	} catch (e) {
-		Logger.warn(e.message);
+		Logger.warn('Unable to fetch openmp', e.message);
 
 		return [];
 	}

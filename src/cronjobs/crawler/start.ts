@@ -1,4 +1,4 @@
-// require('elastic-apm-node').start({ });
+require('elastic-apm-node').start({ });
 
 import { gateway } from './../../util/metrics';
 import apm from 'elastic-apm-node';
@@ -9,6 +9,7 @@ import PQueue from 'p-queue';
 import { IQueryValue, query } from './query';
 import { getFilename } from './store';
 import { getCounter, getGauge } from '../../util/metrics';
+import { S3 } from '../../util/S3';
 
 const job = getGauge('job', ['type']);
 const runtime = getGauge('runtime', ['status']);
@@ -82,7 +83,7 @@ export async function start() {
 	await queue.onIdle();
 
 	// Store the results somewhere
-	// await S3.upload(getFilename(startAt), JSON.stringify({ servers: responses }), 'application/json');
+	await S3.upload(getFilename(startAt), JSON.stringify({ servers: responses }), 'application/json');
 
 	Logger.info('Completed the crawl run', {
 		filename: getFilename(startAt),

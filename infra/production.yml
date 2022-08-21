@@ -85,3 +85,45 @@ spec:
       services:
         - name: server-api
           port: 80
+
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app: server-api-crawler
+  name: server-api-crawler
+  namespace: xeonr-prod-sagl
+spec:
+  schedule: "*/30 * * * *"
+  concurrencyPolicy: Allow
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          serviceAccountName: vault-auth
+          containers:
+            - name: server-api
+              command:
+              - /bin/sh
+              args: ["-c", "npm run production:crawl"]
+              image: europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: NODE_ENV
+                  value: production
+                - name: VAULT_ADDR
+                  value: http://vault-active.vault.svc.cluster.local:8200
+                - name: VAULT_KUBERNETES_ROLE
+                  value: sagl-prod-server-api
+                - name: ELASTIC_APM_SERVICE_NAME
+                  value: sagl-server-api
+                - name: ELASTIC_APM_SERVER_URL
+                  value: http://xeonr-apm-http.xeonr-db:8200
+                - name: ELASTIC_APM_CAPTURE_BODY
+                  value: all
+                - name: ELASTIC_APM_LOG_UNCAUGHT_EXCEPTIONS
+                  value: "true"
+          dnsPolicy: ClusterFirst
+          restartPolicy: OnFailure

@@ -9,8 +9,8 @@ import PQueue from 'p-queue';
 import { IQueryValue, query } from './query';
 import { getFilename } from './store';
 import { getCounter, getGauge } from '../../util/metrics';
+import { blacklistServers, storeServers } from './cache';
 import { S3 } from '../../util/S3';
-import { storeServers, blacklistServers } from './cache';
 
 const job = getGauge('job', ['type']);
 const runtime = getGauge('runtime', ['status']);
@@ -49,13 +49,14 @@ export async function start() {
 	await queue.addAll<Promise<void>>(servers.map(server => {
 		return () => query(server, serverList)
 			.then(res => {
-				responses.push(res);
-
 				if (!res.payload) {
 					failed.push(server);
 					queried.inc({ status: 'failed' }, 1);
+
+					return;
 				}
 
+				responses.push(res);
 				Logger.info('Successfully queried for data', {
 					address: res.ip.address,
 					online: !!res.payload,
@@ -73,7 +74,7 @@ export async function start() {
 				queried.inc({ status: 'exception' }, 1);
 			})
 			.then<void>(() => {
-				const totalQueried = failed.length + responses.length;
+				const totalQueried = failed.length + responses.filter(i => !!i.payload).length;
 
 				if (totalQueried % 50 === 0) {
 					Logger.info(`Queried ${totalQueried} servers out of ${servers.length}`)
@@ -89,7 +90,8 @@ export async function start() {
 	Logger.info('Completed the crawl run', {
 		filename: getFilename(startAt),
 		duration: `${+new Date() - +startAt}ms`,
-		crawled: responses.length,
+		crawled: responses.filter(i => !!i.payload).length,
+		aborted: failed.length - responses.filter(i => !i.payload).length,
 		failed: failed.length,
 		crawledOnline: responses.filter(res => !!res.payload).length,
 	});

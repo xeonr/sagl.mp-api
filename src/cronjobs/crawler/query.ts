@@ -34,7 +34,7 @@ function querySAMP(address: string): Promise<ISAMPQuery> {
 
 	const now = new Date();
 	return pRetry((retry: number) => {
-		return querySamp({ host: hostname, port: +port, timeout: 2000 })
+		return querySamp({ host: hostname, port: +port, timeout: 1000 })
 			.then(res => {
 				query.inc({ status: 'success'})
 				queryTime.observe(+new Date() - +now)
@@ -50,7 +50,7 @@ function querySAMP(address: string): Promise<ISAMPQuery> {
 
 				throw err;
 			})
-	}, { retries: 4 });
+	}, { retries: 2, minTimeout: 0, maxRetryTime: 3000 });
 }
 
 async function queryPing(address: string): Promise<number | null> {

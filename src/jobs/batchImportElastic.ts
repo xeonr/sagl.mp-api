@@ -1,6 +1,6 @@
 import { IQueryValue } from './../cronjobs/crawler/query';
 import config from '@majesticfudgie/vault-config';
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
+import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
 
 import { elasticsearch } from '../util/Elasticsearch';
@@ -60,7 +60,7 @@ const getAllFiles = (dirPath, arrayOfFiles = []) => {
  * @param since Time to look for files after.
  */
 export function getFiles(since: Date): Promise<string | undefined> {
-	return S3.listFiles('polls-v2/')
+	return S3.listFiles('newcrawler/')
 		.then(r => {
 			return r.map<[Date, string]>(i => {
 				const [filename] = i.split('/').reverse();
@@ -184,9 +184,9 @@ const doStuff = (async () => {
 	});
 
 	if (r.errors) {
-		writeFileSync('elastic.json', JSON.stringify(r, null, 4), 'utf-8');
 		console.warn(`Import had errors`);
-		writeFileSync('import-aborted.txt', 'true');
+		await S3.upload('elastic.json', JSON.stringify(r.items, null, 2));
+		await S3.upload('import-aborted.txt', 'true');
 		process.exit(1);
 	}
 	Logger.info('Writing points', { servers: payload.servers.length });
@@ -196,7 +196,10 @@ const doStuff = (async () => {
 });
 
 (async () => {
-	if (existsSync('import-aborted.txt')) {
+	const abort = await S3.getFile('import-aborted.txt')
+		.then(() => true)
+		.catch(() => false);
+	if (abort) {
 		Logger.warn('Blocked from import to es.');
 		return;
 	}

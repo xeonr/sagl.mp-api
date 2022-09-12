@@ -118,14 +118,14 @@ const doStuff = (async () => {
 				openmp: server.openmp ?? false,
 				ip: server.ip.address,
 				ipLocation: server.ip.latitude !== null && server.ip.longitude !== null? {
-					latitude: server.ip.latitude,
-					longitude: server.ip.longitude,
+					lat: server.ip.latitude,
+					lon: server.ip.longitude,
 				} : null,
 				port: server.port,
 				city: server.ip.city ?? 'unknown',
 				country: server.ip.country ?? 'unknown',
 				asnName: server.ip.asn.autonomousSystemOrganization ?? 'unknown',
-				asnId: server.ip.asn.autonomousSystemNumber ?? 'unknown',
+				asnId: server.ip.asn.autonomousSystemNumber ?? -1,
 				origin: server.hosted ? 'hosted' : server.sacnr ? 'sacnr' : server.openmp ? 'openmp' : 'sagl',
 			}
 

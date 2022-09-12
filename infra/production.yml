@@ -99,7 +99,7 @@ spec:
   concurrencyPolicy: Allow
   jobTemplate:
     spec:
-      activeDeadlineSeconds: 600
+      activeDeadlineSeconds: 1200
       template:
         spec:
           serviceAccountName: vault-auth
@@ -127,3 +127,5 @@ spec:
                   value: "true"
           dnsPolicy: ClusterFirst
           restartPolicy: OnFailure
+          imagePullSecrets:
+          - name: gcr-docker

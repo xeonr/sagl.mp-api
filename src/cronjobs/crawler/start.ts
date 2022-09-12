@@ -10,6 +10,7 @@ import { IQueryValue, query } from './query';
 import { getFilename } from './store';
 import { getCounter, getGauge } from '../../util/metrics';
 import { S3 } from '../../util/S3';
+import { storeServers, blacklistServers } from './cache';
 
 const job = getGauge('job', ['type']);
 const runtime = getGauge('runtime', ['status']);
@@ -94,8 +95,8 @@ export async function start() {
 	});
 
 	// Store the servers in core db.
-	// await storeServers(responses);
-	// await blacklistServers(failed)
+	await storeServers(responses);
+	await blacklistServers(failed)
 
 	runtime.set({ status: 'success' }, +new Date() - +startAt)
 	job.set({ type: 'end' }, +new Date());

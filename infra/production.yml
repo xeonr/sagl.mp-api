@@ -170,6 +170,7 @@ spec:
                   value: "true"
           dnsPolicy: ClusterFirst
           restartPolicy: OnFailure
+          concurrencyPolicy: Forbid
           imagePullSecrets:
           - name: gcr-docker
 ---
@@ -213,5 +214,6 @@ spec:
                   value: "true"
           dnsPolicy: ClusterFirst
           restartPolicy: OnFailure
+          concurrencyPolicy: Forbid
           imagePullSecrets:
           - name: gcr-docker

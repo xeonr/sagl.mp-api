@@ -22,7 +22,7 @@ export async function blacklistServers(servers: string[]) {
 
 	for (const server of servers) {
 		await GameServerBlacklist.create({
-			server,
+			address: server,
 			expiresAt: new Date(+new Date() + (1000 * 60 * 60 * 3) + offset)
 		})
 		.catch(() => {

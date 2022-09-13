@@ -139,7 +139,7 @@ metadata:
   namespace: xeonr-prod-sagl
 spec:
   schedule: "5-59/10 * * * *"
-  concurrencyPolicy: Allow
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       activeDeadlineSeconds: 1200
@@ -170,7 +170,6 @@ spec:
                   value: "true"
           dnsPolicy: ClusterFirst
           restartPolicy: OnFailure
-          concurrencyPolicy: Forbid
           imagePullSecrets:
           - name: gcr-docker
 ---
@@ -183,7 +182,7 @@ metadata:
   namespace: xeonr-prod-sagl
 spec:
   schedule: "5-59/10 * * * *"
-  concurrencyPolicy: Allow
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       activeDeadlineSeconds: 1200
@@ -214,6 +213,5 @@ spec:
                   value: "true"
           dnsPolicy: ClusterFirst
           restartPolicy: OnFailure
-          concurrencyPolicy: Forbid
           imagePullSecrets:
           - name: gcr-docker

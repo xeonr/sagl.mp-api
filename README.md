@@ -22,3 +22,4 @@ When writing code, please lint your code before committing:
 ```bash
 npm run lint
 ```
+.

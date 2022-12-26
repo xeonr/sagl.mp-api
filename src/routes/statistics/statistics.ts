@@ -1,5 +1,3 @@
-import { influxdb } from './../../util/Influxdb';
-import { flux } from '@influxdata/influxdb-client';
 import { AggregationsStringTermsAggregate } from '@elastic/elasticsearch/lib/api/types';
 import { Lifecycle, Server, Request } from '@hapi/hapi';
 import config from '@majesticfudgie/vault-config';
@@ -9,6 +7,8 @@ import { elasticsearch } from '../../util/Elasticsearch';
 import { lookupIP } from '../../util/MaxMind';
 import { RouterFn } from './../../util/Types';
 import { groupBy } from 'lodash';
+import { clickhouseClient, dateToClickhouseDateTime } from '../../util/Clickhouse';
+import moment from 'moment';
 
 async function aggregate(property: string): Promise<{ key: string; value: number }[]> {
 	const results = await elasticsearch.search({
@@ -200,44 +200,39 @@ export const routes: RouterFn = (router: Server): void => {
 		method: 'GET',
 		path: '/statistics/tsdb/players',
 		handler: async (): Promise<Lifecycle.ReturnValue> => {
-			const fluxQuery = flux`
-				from(bucket: ${config.get('influxdb.bucket')})
-				|> range(start: -7d, stop: now())
-				|> filter(fn: (r) => r["_measurement"] == "server")
-				|> filter(fn: (r) => r["_field"] == "players")
-				|> aggregateWindow(every: 1h, fn: max, createEmpty: true)
-				|> keep(columns: ["_time", "_measurement", "_value", "country"])
-				|> group(columns: ["_time", "country"])
-				|> sort(columns: ["_time"])
-				|> sum()
-				|> group(columns: ["country"])
-			`;
+			const from = moment().subtract(1, 'week').startOf('day').toDate();
+			const query = `
+SELECT
+	avg(players) AS value,
+	min(pingedAt) as timestamp,
+	country,
+	toDate (pingedAt) AS date,
+	toHour (pingedAt) AS hour
+FROM
+	server_stats
+WHERE pingedAt >= { date: DateTime }
+GROUP BY
+	country,
+	date,
+	hour
+ORDER BY
+	country asc, timestamp asc
+`;
+			return clickhouseClient.query({ query, query_params: { date: dateToClickhouseDateTime(from)  } })
+				.then(res => res.json())
+				.then((res: any) => res.data)
+				.then(res => {
+					const data = groupBy(res, r => r['country']);
+					const times = Object.keys(data);
 
-			return new Promise((resolve, reject) => {
-				const rows: [string, number, string][] = [];
-
-				influxdb.getQueryApi(config.get('influxdb.org')).queryRows(fluxQuery, {
-					next(row: string[], consumer) {
-						const data = consumer.toObject(row);
-						rows.push([data._time, data._value, data.country]);
-					},
-					error(err) {
-						reject(err);
-					},
-					complete() {
-						const data = groupBy(rows, r => r[2]);
-						const times = Object.keys(data);
-
-						resolve(times.map(time => ({
-							country: time,
-							points: data[time].map(e => ({
-								value: e[1],
-								ts: e[0],
-							})),
-						})))
-					},
+					return times.map(time => ({
+						country: time,
+						points: data[time].map(e => ({
+							value: e.value,
+							ts: new Date(e.timestamp).toISOString(),
+						}))
+					}));
 				});
-			});
 		},
 	});
 };

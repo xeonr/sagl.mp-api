@@ -1,6 +1,5 @@
 import { notFound } from '@hapi/boom';
 import { Lifecycle, Request, Server } from '@hapi/hapi';
-import { flux, fluxDuration, fluxExpression } from '@influxdata/influxdb-client';
 import config from '@majesticfudgie/vault-config';
 import Joi from 'joi';
 import moment, { Moment } from 'moment';
@@ -8,10 +7,10 @@ import { Op } from 'sequelize';
 
 import { GameServerHostname } from '../../models/GameServerHostname';
 import { elasticsearch } from '../../util/Elasticsearch';
-import { influxdb } from '../../util/Influxdb';
 import { GameServer } from './../../models/GameServer';
 import { RouterFn } from './../../util/Types';
 import { transformGameServerEs } from './servers';
+import { clickhouseClient, dateToClickhouseDateTime } from '../../util/Clickhouse';
 
 const roundTo30Minutes = (date: Moment): Moment => {
 	return moment(date)
@@ -84,34 +83,39 @@ export const routes: RouterFn = (router: Server): void => {
 			},
 		},
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
-			const date = roundTo30Minutes(moment().subtract(1, request.query.period));
-			const resolution = fluxDuration(request.query.period === 'week' ? '2h' : '30m');
-			const fn = fluxExpression(request.query.type === 'peak' ? 'max' : request.query.type === 'average' ? 'mean' : 'min');
-			const address = `${request.params.ip}:${request.params.port}`;
+			const fromDate = roundTo30Minutes(moment().subtract(1, request.query.period));
+			const resolution = request.query.period !== 'day' ? '2h' : '30m';
+			const interval = resolution === '2h' ? 60 * 60 * 2 : 30 * 60;
+			const fn = request.query.type === 'peak' ? 'max' : request.query.type === 'average' ? 'avg' : 'min';
 
-			const fluxQuery = flux`
-				from(bucket: ${config.get('influxdb.bucket')})
-				|> range(start: time(v: ${date.toISOString()}), stop: now())
-				|> filter(fn: (r) => r["_measurement"] == "server" and r["_field"] == "players" and r["address"] == ${address})
-				|> aggregateWindow(every: ${resolution}, fn: ${fn}, createEmpty: true)
-			`;
-
-			return new Promise((resolve, reject) => {
-				const rows: [string, number][] = [];
-
-				influxdb.getQueryApi(config.get('influxdb.org')).queryRows(fluxQuery, {
-					next(row: string[], consumer) {
-						const data = consumer.toObject(row);
-						rows.push([data._time, data._value]);
-					},
-					error(err) {
-						reject(err);
-					},
-					complete() {
-						resolve(rows);
-					},
+			return clickhouseClient.query({
+				query_params: {
+					port: request.params.port,
+					ip: request.params.ip,
+					interval,
+					fromTime: dateToClickhouseDateTime(fromDate),
+				},
+				query: `
+SELECT
+	min(pingedAt) AS bucket,
+	${fn}(players) AS value,
+	toUnixTimestamp (pingedAt)
+	DIV({ interval: Int32 }) AS time
+FROM
+	server_stats
+WHERE
+	address = { ip: String }
+	AND port = { port: Int32 }
+	AND pingedAt >= { fromTime: DateTime }
+GROUP BY
+	time
+ORDER BY
+	bucket
+`
+			}).then(res => res.json())
+				.then((res: any) => {
+					return res.data.map((row: any) => ([new Date(row.bucket).toISOString(), Math.round(row.value)]));
 				});
-			});
 		},
 	});
 
@@ -130,32 +134,38 @@ export const routes: RouterFn = (router: Server): void => {
 			},
 		},
 		handler: async (request: Request): Promise<Lifecycle.ReturnValue> => {
-			const date = roundTo30Minutes(moment().subtract(1, request.query.period));
-			const resolution = fluxDuration(request.query.period === 'week' ? '2h' : '30m');
-			const address = `${request.params.ip}:${request.params.port}`;
+			const fromDate = roundTo30Minutes(moment().subtract(1, request.query.period));
+			const resolution = request.query.period !== 'day' ? '2h' : '30m';
+			const interval = resolution === '2h' ? 60 * 60 * 2 : 30 * 60;
+			const fn = 'avg';
 
-			const fluxQuery = flux`
-				from(bucket: ${config.get('influxdb.bucket')})
-				|> range(start: time(v: ${date.toISOString()}), stop: now())
-				|> filter(fn: (r) => r["_measurement"] == "server" and r["_field"] == "ping" and r["address"] == ${address})
-				|> aggregateWindow(every: ${resolution}, fn: avg, createEmpty: true)
-			`;
-
-			return new Promise((resolve, reject) => {
-				const rows: [string, number][] = [];
-
-				influxdb.getQueryApi(config.get('influxdb.org')).queryRows(fluxQuery, {
-					next(row: string[], consumer) {
-						const data = consumer.toObject(row);
-						rows.push([data._time, Math.round(data._value)]);
-					},
-					error(err) {
-						reject(err);
-					},
-					complete() {
-						resolve(rows);
-					},
-				});
+			return clickhouseClient.query({
+				query_params: {
+					port: request.params.port,
+					ip: request.params.ip,
+					interval,
+					fromTime: dateToClickhouseDateTime(fromDate),
+				},
+				query: `
+SELECT
+	min(pingedAt) AS bucket,
+	${fn}(ping) AS value,
+	toUnixTimestamp (pingedAt)
+	DIV({ interval: Int32 }) AS time
+FROM
+	server_stats
+WHERE
+	address = { ip: String }
+	AND port = { port: Int32 }
+	AND pingedAt >= { fromTime: DateTime }
+GROUP BY
+	time
+ORDER BY
+	bucket
+`
+			}).then(res => res.json())
+			.then((res: any) => {
+				return res.data.map((row: any) => ([new Date(row.bucket).toISOString(), Math.round(row.value)]));
 			});
 		},
 	});

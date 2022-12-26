@@ -10,10 +10,6 @@ export interface IFileContents {
 	servers: IQueryValue[];
 }
 
-function formatDate(date) {
-	return new Intl.DateTimeFormat('en-GB', { year: 'numeric', day: 'numeric', month: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', timeZone: 'UTC' }).format(date).replace(/\//g, '-');
-}
-
 /**
  * Returns the timestamp of the last imported ping run.
  */

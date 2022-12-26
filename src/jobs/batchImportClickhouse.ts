@@ -54,6 +54,7 @@ export function getFiles(since: Date): Promise<string | undefined> {
 			return r.map<[Date, string]>(i => {
 				const [filename] = i.split('/').reverse();
 				const date = new Date(filename.split('.json')[0]);
+				date.setMilliseconds(0);
 
 				return [date, i];
 			})

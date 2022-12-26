@@ -11,7 +11,7 @@
     "lint": "tslint --project .",
     "production": "vault-config && node dist/server.js",
     "production:crawl": "vault-config && node dist/cronjobs/crawler/start.js",
-    "production:import": "vault-config && node dist/jobs/batchImport.js",
+    "production:import": "vault-config && node dist/jobs/batchImportClickhouse.js",
     "production:import-es": "vault-config && node dist/jobs/batchImportElastic.js"
   },
   "author": "",

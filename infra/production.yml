@@ -42,6 +42,8 @@ spec:
               value: all
             - name: ELASTIC_APM_LOG_UNCAUGHT_EXCEPTIONS
               value: "true"
+            - name: ELASTIC_APM_ACTIVE
+              value: "false"
           resources:
             requests:
               cpu: "250m"
@@ -125,6 +127,8 @@ spec:
                   value: all
                 - name: ELASTIC_APM_LOG_UNCAUGHT_EXCEPTIONS
                   value: "true"
+                - name: ELASTIC_APM_ACTIVE
+                  value: "false"
           dnsPolicy: ClusterFirst
           restartPolicy: OnFailure
           imagePullSecrets:
@@ -168,6 +172,8 @@ spec:
                   value: all
                 - name: ELASTIC_APM_LOG_UNCAUGHT_EXCEPTIONS
                   value: "true"
+                - name: ELASTIC_APM_ACTIVE
+                  value: "false"
           dnsPolicy: ClusterFirst
           restartPolicy: OnFailure
           imagePullSecrets:
@@ -211,6 +217,8 @@ spec:
                   value: all
                 - name: ELASTIC_APM_LOG_UNCAUGHT_EXCEPTIONS
                   value: "true"
+                - name: ELASTIC_APM_ACTIVE
+                  value: "false"
           dnsPolicy: ClusterFirst
           restartPolicy: OnFailure
           imagePullSecrets:

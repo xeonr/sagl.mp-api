@@ -1,2 +1,3 @@
 @xeonr:registry=https://npm.pkg.github.com
+@buf:registry=https://buf.build/gen/npm/v1
 //npm.pkg.github.com/:_authToken=${NPM_TOKEN}

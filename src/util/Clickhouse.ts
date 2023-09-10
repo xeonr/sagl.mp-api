@@ -1,18 +1,17 @@
 import { createClient } from '@clickhouse/client'
-import configInstance from '@majesticfudgie/vault-config';
 
 export const clickhouseClient = createClient({
-	host: configInstance.get('clickhouse.host'),
-	username: configInstance.get('clickhouse.username'),
-	password: configInstance.get('clickhouse.password'),
-	database: configInstance.get('clickhouse.database'),
+	host: process.env.CLICKHOUSE_HOST,
+	username: process.env.CLICKHOUSE_USERNAME,
+	password: process.env.CLICKHOUSE_PASSWORD,
+	database: process.env.CLICKHOUSE_DATABASE,
 	clickhouse_settings: {}
 });
 
 
 
-export function dateToClickhouseDateTime(date): string {
-	const pad = (n) => n < 10 ? `0${n}` : n;
+export function dateToClickhouseDateTime(date: Date): string {
+	const pad = (n: string) => +n < 10 ? `0${n}` : n;
 
 	const year = Intl.DateTimeFormat('en-GB', { year: 'numeric', timeZone: 'UTC' }).format(date);
 	const month = Intl.DateTimeFormat('en-GB', { month: '2-digit', timeZone: 'UTC' }).format(date);

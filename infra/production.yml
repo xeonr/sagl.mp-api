@@ -21,6 +21,12 @@ spec:
       labels:
         product: sagl
         app: server-api
+      annotations:
+        vault.security.banzaicloud.io/vault-addr: http://vault-active.vault.svc.cluster.local:8200
+        vault.security.banzaicloud.io/vault-agent: "false"
+        vault.security.banzaicloud.io/vault-path: kubernetes
+        vault.security.banzaicloud.io/vault-role: sagl-prod-crawler
+        vault.security.banzaicloud.io/enable-json: "true"
       name: server-api
     spec:
       serviceAccountName: vault-auth
@@ -30,20 +36,18 @@ spec:
           env:
             - name: NODE_ENV
               value: production
-            - name: VAULT_ADDR
-              value: http://vault-active.vault.svc.cluster.local:8200
-            - name: VAULT_KUBERNETES_ROLE
-              value: sagl-prod-server-api
-            - name: ELASTIC_APM_SERVICE_NAME
-              value: sagl-server-api
-            - name: ELASTIC_APM_SERVER_URL
-              value: http://xeonr-apm-http.xeonr-db:8200
-            - name: ELASTIC_APM_CAPTURE_BODY
-              value: all
-            - name: ELASTIC_APM_LOG_UNCAUGHT_EXCEPTIONS
-              value: "true"
-            - name: ELASTIC_APM_ACTIVE
-              value: "false"
+            - name: REDIS_URL
+              value: "vault:sagl/data/database/redis#uri"
+            - name: MONGODB_URI
+              value: "vault:sagl/data/database/mongodb#uri"
+            - name: CLICKHOUSE_HOST
+              value: "vault:sagl/data/database/clickhouse#host"
+            - name: CLICKHOUSE_USERNAME
+              value: "vault:sagl/data/database/clickhouse#username"
+            - name: CLICKHOUSE_PASSWORD
+              value: "vault:sagl/data/database/clickhouse#password"
+            - name: CLICKHOUSE_DATABASE
+              value: "vault:sagl/data/database/clickhouse#database"
           resources:
             requests:
               cpu: "250m"
@@ -87,139 +91,3 @@ spec:
       services:
         - name: server-api
           port: 80
-
----
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  labels:
-    app: server-api-crawler
-  name: server-api-crawler
-  namespace: xeonr-prod-sagl
-spec:
-  schedule: "*/10 * * * *"
-  concurrencyPolicy: Allow
-  jobTemplate:
-    spec:
-      activeDeadlineSeconds: 1200
-      template:
-        spec:
-          serviceAccountName: vault-auth
-          containers:
-            - name: server-api
-              command:
-              - /bin/sh
-              args: ["-c", "npm run production:crawl"]
-              image: europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api
-              imagePullPolicy: IfNotPresent
-              env:
-                - name: NODE_ENV
-                  value: production
-                - name: VAULT_ADDR
-                  value: http://vault-active.vault.svc.cluster.local:8200
-                - name: VAULT_KUBERNETES_ROLE
-                  value: sagl-prod-server-api
-                - name: ELASTIC_APM_SERVICE_NAME
-                  value: sagl-server-api
-                - name: ELASTIC_APM_SERVER_URL
-                  value: http://xeonr-apm-http.xeonr-db:8200
-                - name: ELASTIC_APM_CAPTURE_BODY
-                  value: all
-                - name: ELASTIC_APM_LOG_UNCAUGHT_EXCEPTIONS
-                  value: "true"
-                - name: ELASTIC_APM_ACTIVE
-                  value: "false"
-          dnsPolicy: ClusterFirst
-          restartPolicy: OnFailure
-          imagePullSecrets:
-          - name: gcr-docker
----
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  labels:
-    app: server-api-importer
-  name: server-api-importer
-  namespace: xeonr-prod-sagl
-spec:
-  schedule: "5-59/10 * * * *"
-  concurrencyPolicy: Forbid
-  jobTemplate:
-    spec:
-      activeDeadlineSeconds: 1200
-      template:
-        spec:
-          serviceAccountName: vault-auth
-          containers:
-            - name: server-api
-              command:
-              - /bin/sh
-              args: ["-c", "npm run production:import"]
-              image: europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api
-              imagePullPolicy: IfNotPresent
-              env:
-                - name: NODE_ENV
-                  value: production
-                - name: VAULT_ADDR
-                  value: http://vault-active.vault.svc.cluster.local:8200
-                - name: VAULT_KUBERNETES_ROLE
-                  value: sagl-prod-server-api
-                - name: ELASTIC_APM_SERVICE_NAME
-                  value: sagl-server-api
-                - name: ELASTIC_APM_SERVER_URL
-                  value: http://xeonr-apm-http.xeonr-db:8200
-                - name: ELASTIC_APM_CAPTURE_BODY
-                  value: all
-                - name: ELASTIC_APM_LOG_UNCAUGHT_EXCEPTIONS
-                  value: "true"
-                - name: ELASTIC_APM_ACTIVE
-                  value: "false"
-          dnsPolicy: ClusterFirst
-          restartPolicy: OnFailure
-          imagePullSecrets:
-          - name: gcr-docker
----
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  labels:
-    app: server-api-importer-es
-  name: server-api-importer-es
-  namespace: xeonr-prod-sagl
-spec:
-  schedule: "5-59/10 * * * *"
-  concurrencyPolicy: Forbid
-  jobTemplate:
-    spec:
-      activeDeadlineSeconds: 1200
-      template:
-        spec:
-          serviceAccountName: vault-auth
-          containers:
-            - name: server-api
-              command:
-              - /bin/sh
-              args: ["-c", "npm run production:import-es"]
-              image: europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api
-              imagePullPolicy: IfNotPresent
-              env:
-                - name: NODE_ENV
-                  value: production
-                - name: VAULT_ADDR
-                  value: http://vault-active.vault.svc.cluster.local:8200
-                - name: VAULT_KUBERNETES_ROLE
-                  value: sagl-prod-server-api
-                - name: ELASTIC_APM_SERVICE_NAME
-                  value: sagl-server-api
-                - name: ELASTIC_APM_SERVER_URL
-                  value: http://xeonr-apm-http.xeonr-db:8200
-                - name: ELASTIC_APM_CAPTURE_BODY
-                  value: all
-                - name: ELASTIC_APM_LOG_UNCAUGHT_EXCEPTIONS
-                  value: "true"
-                - name: ELASTIC_APM_ACTIVE
-                  value: "false"
-          dnsPolicy: ClusterFirst
-          restartPolicy: OnFailure
-          imagePullSecrets:
-          - name: gcr-docker

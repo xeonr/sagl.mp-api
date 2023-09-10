@@ -1,0 +1,263 @@
+syntax = "proto3";
+
+package serversapi.v1;
+
+message Server {
+  string id = 1;
+
+  // hostname only
+  string hostname = 2;
+
+  // port
+  int32 port = 3;
+
+  // displayed address
+  string address = 4;
+
+  // public display name
+  string name = 5;
+
+  bool is_supporter = 6;
+  bool is_hosted = 7;
+  bool is_passworded = 8;
+  //   bool is_supported = 9;
+  bool is_online = 10;
+  string last_online_at = 11;
+  string captured_at = 12;
+
+  message PlayersMetadata {
+    int32 current_players = 1;
+    int32 max_players = 2;
+    bool exceeded_samp_limit = 3;
+  }
+
+  PlayersMetadata players = 13;
+
+  map<string, string> rules = 14;
+
+  message NetworkDetails {
+    string country = 1;
+    string asn = 2;
+    string asn_name = 3;
+  }
+
+  NetworkDetails network_details = 15;
+
+  message SAGLMetadata {
+    string icon = 1;
+    string discord_guild = 2;
+    map<string, string> social_networks = 3;
+  }
+  SAGLMetadata metadata = 16;
+}
+
+message GetServerRequest {
+  string target = 1;
+}
+
+message GetServerResponse {
+  optional Server server = 1;
+}
+
+enum Operator {
+  EQUAL = 0;
+  NOT_EQUAL = 1;
+  GREATER_THAN = 2;
+  LESS_THAN = 3;
+  BETWEEN = 4;
+}
+
+enum FieldName {
+  CURRENT_PLAYERS = 0;
+  MAX_PLAYERS = 1;
+  GAME_LANGUAGE = 2;
+  GAME_MODE = 3;
+  GAME_VERSION = 4;
+  COUNTRY = 5;
+  NETWORK_COUNTRY = 6;
+  NETWORK_ASN = 7;
+  NETWORK_NAME = 8;
+  IS_PASSWORDED = 9;
+  IS_HOSTED = 10;
+  IS_SUPPORTER = 11;
+  ADDRESS = 12;
+  QUERY = 13;
+}
+
+message ListServersRequest {
+  message Sort {
+    FieldName field = 1;
+    bool ascending = 2;
+  }
+
+  message FieldQuery {
+    FieldName field = 1;
+    Operator operator = 2;
+    repeated string value = 3;
+  }
+
+  message ListServersRequestFilter {
+    int32 limit = 1;
+    Sort sort = 2;
+    repeated FieldQuery filter = 3;
+  }
+
+  oneof request_type {
+    ListServersRequestFilter filter = 1;
+    string continuation_token = 2;
+  }
+}
+
+message ListServersResponse {
+  repeated Server server = 1;
+  string continuation_token = 2;
+}
+
+service ServerService {
+  rpc GetServer(GetServerRequest) returns (GetServerResponse);
+  rpc ListServers(ListServersRequest) returns (ListServersResponse);
+}
+
+enum Timeframe {
+  DAY = 0;
+  WEEK = 1;
+  MONTH = 2;
+}
+
+enum AggregationType {
+  PEAK = 0;
+  AVERAGE = 1;
+  MINIMUM = 2;
+}
+
+message Datapoint {
+  string timestamp = 1;
+  int64 value = 2;
+}
+
+message GetPingTimeseriesRequest {
+  string ip_address = 1;
+  int32 port = 2;
+  Timeframe period = 3;
+}
+
+message GetPingTimeseriesResponse {
+  repeated Datapoint datapoints = 1;
+}
+
+message GetPlayersTimeseriesRequest {
+  string ip_address = 1;
+  int32 port = 2;
+  Timeframe period = 3;
+  AggregationType type = 4;
+}
+
+message GetPlayersTimeseriesResponse {
+  repeated Datapoint datapoints = 1;
+}
+
+message GetPlayersByCountryRequest {}
+
+message GetPlayersByCountyResponse {
+  message CountryTimeseries {
+    string country = 1;
+    repeated Datapoint datapoints = 2;
+  }
+
+  repeated CountryTimeseries countries = 1;
+}
+
+service TimeseriesService {
+  rpc GetServerPing(GetPingTimeseriesRequest) returns (GetPingTimeseriesResponse);
+  rpc GetServerPlayers(GetPlayersTimeseriesRequest) returns (GetPlayersTimeseriesResponse);
+
+  rpc GetPlayersByCountry(GetPlayersByCountryRequest) returns (GetPlayersByCountyResponse);
+}
+
+message CurrentPlayersRequest {}
+
+message CurrentPlayersResponse {
+  int32 online_players = 1;
+  int32 max_players = 2;
+  int32 average_players = 3;
+  int32 percent_full = 4;
+}
+
+message GetGameVersionDistributionRequest {}
+message GetGameVersionDistributionResponse {
+  message GameVersion {
+    string version = 1;
+    int32 count = 2;
+  }
+
+  repeated GameVersion game_versions = 1;
+}
+
+message GetGameModeDistributionRequest {}
+message GetGameModeDistributionResponse {
+  message GameMode {
+    string gamemode = 1;
+    int32 count = 2;
+  }
+
+  repeated GameMode game_modes = 1;
+}
+
+message GetGameLanguageDistributionRequest {}
+message GetGameLanguageDistributionResponse {
+  message GameLanguage {
+    string language = 1;
+    int32 count = 2;
+  }
+
+  repeated GameLanguage game_languages = 1;
+}
+message GetNetworkCountryDistributionRequest {}
+message GetNetworkCountryDistributionResponse {
+  message NetworkCountry {
+    string country = 1;
+    int32 count = 2;
+  }
+
+  repeated NetworkCountry network_countries = 1;
+}
+message GetNetworkASNDistributionRequest {}
+message GetNetworkASNDistributionResponse {
+  message NetworkASN {
+    string asn = 1;
+    string name = 2;
+    int32 count = 3;
+  }
+
+  repeated NetworkASN network_asns = 1;
+}
+
+message NearbyServersRequest {}
+
+message NearbyServersResponse {
+  message CloseGameServer {
+    string id = 1;
+    string hostname = 2;
+    int32 online_players = 3;
+    int32 max_players = 4;
+    string country = 5;
+    float latitude = 6;
+    float longitude = 7;
+    float distance_mi = 8;
+  }
+
+  repeated CloseGameServer servers = 1;
+  float current_latitude = 6;
+  float current_longitude = 7;
+}
+
+service StatisticsService {
+  rpc CurrentPlayers(CurrentPlayersRequest) returns (CurrentPlayersResponse);
+  rpc NearbyServers(NearbyServersRequest) returns (NearbyServersResponse);
+
+  rpc GetGameVersionDistribution(GetGameVersionDistributionRequest) returns (GetGameVersionDistributionResponse);
+  rpc GetGameModeDistribution(GetGameModeDistributionRequest) returns (GetGameModeDistributionResponse);
+  rpc GetGameLanguageDistribution(GetGameLanguageDistributionRequest) returns (GetGameLanguageDistributionResponse);
+  rpc GetNetworkCountryDistribution(GetNetworkCountryDistributionRequest) returns (GetNetworkCountryDistributionResponse);
+  rpc GetNetworkASNDistribution(GetNetworkASNDistributionRequest) returns (GetNetworkASNDistributionResponse);
+}

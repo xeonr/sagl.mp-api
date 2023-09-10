@@ -25,7 +25,7 @@ spec:
         vault.security.banzaicloud.io/vault-addr: http://vault-active.vault.svc.cluster.local:8200
         vault.security.banzaicloud.io/vault-agent: "false"
         vault.security.banzaicloud.io/vault-path: kubernetes
-        vault.security.banzaicloud.io/vault-role: sagl-prod-crawler
+        vault.security.banzaicloud.io/vault-role: sagl-prod-server-api
         vault.security.banzaicloud.io/enable-json: "true"
       name: server-api
     spec:

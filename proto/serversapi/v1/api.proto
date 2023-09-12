@@ -113,8 +113,18 @@ message ListServersResponse {
   string continuation_token = 2;
 }
 
+message TrackServerRequest {
+  string ip_address = 1;
+  int32 port = 2;
+}
+
+message TrackServerResponse {
+  optional Server server = 1;
+}
+
 service ServerService {
   rpc GetServer(GetServerRequest) returns (GetServerResponse);
+  rpc TrackServer(TrackServerRequest) returns (TrackServerResponse);
   rpc ListServers(ListServersRequest) returns (ListServersResponse);
 }
 

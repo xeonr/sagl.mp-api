@@ -16,7 +16,7 @@ export interface IServer {
 		type: 'Point',
 		coordinates: [number, number];
 	} | null;
-	language: boolean;
+	language: string;
 	lastOnlineAt: Date;
 	lastUpdatedAt: Date;
 	maxPlayers: number;
@@ -47,7 +47,7 @@ const serverSchema = new Schema({
 		lat: Number,
 		lon: Number
 	},
-	language: Boolean,
+	language: String,
 	lastOnlineAt: Date,
 	lastUpdatedAt: Date,
 	maxPlayers: Number,
@@ -66,3 +66,13 @@ const serverSchema = new Schema({
 
 export const Server = mongooseInstance.model <IServer>('Server', serverSchema);
 
+
+const gameServerPointerSchema = new Schema({
+	address: String,
+	ip: String,
+	port: Number,
+	sacnr: Boolean,
+	openmp: Boolean,
+});
+
+export const GameServerPointer = mongooseInstance.model('GameServerPointer', gameServerPointerSchema);

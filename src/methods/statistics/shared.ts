@@ -8,7 +8,7 @@ export async function aggregate<T extends string>(property: string, extra: T[]):
 	}
 
 	const resp = await Server.aggregate([
-		{ $match: { lastUpdatedAt: { $gte: getRecentDataTimestamp().toISOString() }  } },
+		{ $match: { lastUpdatedAt: { $gte: getRecentDataTimestamp() }  } },
 		{ $group: { _id: { [property]: `$${property}`, }, ...extraProps, count: { $sum: 1 } } },
 		{ $sort: { count: -1 }},
 	]);

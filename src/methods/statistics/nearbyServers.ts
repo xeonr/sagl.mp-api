@@ -14,7 +14,7 @@ export async function nearbyServers(_: NearbyServersRequest): Promise<NearbyServ
 				key: 'ipLocation',
 				spherical: true,
 				distanceMultiplier: 0.000621371,
-				query: { lastUpdatedAt: { $gte: getRecentDataTimestamp().toISOString() } },
+				query: { lastUpdatedAt: { $gte: getRecentDataTimestamp() } },
 			}
 		}
 	])

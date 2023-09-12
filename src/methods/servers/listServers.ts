@@ -58,9 +58,9 @@ const fieldMap: { [key in FieldName]: { key: string; transform?: (key: string[])
 
 function generateMongoQuery(request: ListServersRequest_ListServersRequestFilter, offset: number): { query: PipelineStage[]; stages: PipelineStage[]; limit: number; offset: number } {
 	const stages: PipelineStage[] = [
-		{ $match: { lastUpdatedAt: { $gte: getRecentDataTimestamp().toISOString() } } },
+		{ $match: { lastUpdatedAt: { $gte: getRecentDataTimestamp() } } },
 	];
-	
+
 	stages.push(...request.filter.map(filter => {
 		const fieldName = fieldMap[filter.field].key;
 		const fieldValue = fieldMap[filter.field].transform ? fieldMap[filter.field].transform?.(filter.value) : filter.value;
@@ -83,7 +83,7 @@ function generateMongoQuery(request: ListServersRequest_ListServersRequestFilter
 
 		if (filter.operator === Operator.GREATER_THAN) {
 			return { $match: { [fieldName]: { $gt: fieldValue } } };
-		}	
+		}
 
 		if (filter.operator === Operator.LESS_THAN) {
 			return { $match: { [fieldName]: { $lt: fieldValue } } };
@@ -169,7 +169,7 @@ export async function listServers(request: ListServersRequest): Promise<ListServ
 	} else {
 		throw new Error('bad thing happened');
 	}
-	
+
 	return Server.aggregate(query)
 		.then(async servers => {
 			return new ListServersResponse({

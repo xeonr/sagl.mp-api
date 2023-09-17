@@ -5,6 +5,7 @@ import { fastifyConnectPlugin } from "@connectrpc/connect-fastify";
 import statsRoutes from './methods/statistics/index.js';
 import serversRoutes from './methods/servers/index.js';
 import timeseriesRoutes from './methods/timeseries/index.js';
+import metaRoutes from './methods/meta/index.js';
 
 (async () => {
 	const server = fastify({
@@ -28,6 +29,7 @@ import timeseriesRoutes from './methods/timeseries/index.js';
 			statsRoutes(router);
 			serversRoutes(router);
 			timeseriesRoutes(router);
+			metaRoutes(router);
 		},
 		logLevel: "debug",
 	});

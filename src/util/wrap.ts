@@ -1,9 +1,9 @@
-import { ConnectError, Code } from '@connectrpc/connect';
+import { ConnectError, Code, type HandlerContext } from '@connectrpc/connect';
 
-export function wrap<T, Q>(fn: (request: T) => Promise<Q>): (request: T) => Promise<Q> {
-	return async (request: T): Promise<Q> => {
+export function wrap<T, Q>(fn: (request: T, handlerContext: HandlerContext) => Promise<Q>): (request: T, handlerContext: HandlerContext) => Promise<Q> {
+	return async (request: T, handlerContext: HandlerContext): Promise<Q> => {
 		try {
-			const resp = await fn(request);
+			const resp = await fn(request, handlerContext);
 
 			return resp;
 		} catch(e) {

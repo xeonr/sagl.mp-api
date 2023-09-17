@@ -2,12 +2,28 @@ syntax = "proto3";
 
 package serversapi.v1;
 
+message SAGLMetadata {
+  map<string, string> social_networks = 3;
+  optional string description = 4;
+  optional string profile_icon = 5;
+  optional string display_name = 6;
+  optional string hostname = 7;
+  optional bool is_supporter = 8;
+}
+
+message SAGLOwner {
+  string username = 1;
+  string avatar = 2;
+  string claimed_at = 3;
+}
+
 message Server {
   string id = 1;
 
   // hostname only
   string hostname = 2;
 
+  string ip_address = 20;
   // port
   int32 port = 3;
 
@@ -17,10 +33,8 @@ message Server {
   // public display name
   string name = 5;
 
-  bool is_supporter = 6;
   bool is_hosted = 7;
   bool is_passworded = 8;
-  //   bool is_supported = 9;
   bool is_online = 10;
   string last_online_at = 11;
   string captured_at = 12;
@@ -33,6 +47,8 @@ message Server {
 
   PlayersMetadata players = 13;
 
+  string gamemode = 18;
+  string language = 19;
   map<string, string> rules = 14;
 
   message NetworkDetails {
@@ -43,12 +59,8 @@ message Server {
 
   NetworkDetails network_details = 15;
 
-  message SAGLMetadata {
-    string icon = 1;
-    string discord_guild = 2;
-    map<string, string> social_networks = 3;
-  }
-  SAGLMetadata metadata = 16;
+  SAGLMetadata sagl_metadata = 16;
+  repeated SAGLOwner sagl_owners = 17;
 }
 
 message GetServerRequest {
@@ -82,6 +94,7 @@ enum FieldName {
   IS_SUPPORTER = 11;
   ADDRESS = 12;
   QUERY = 13;
+  DISCORD_GUILD = 14;
 }
 
 message ListServersRequest {
@@ -122,10 +135,74 @@ message TrackServerResponse {
   optional Server server = 1;
 }
 
+message ClaimServerRequest {
+  enum ClaimType {
+    CLAIM_TYPE_UNSPECIFIED = 0;
+    CLAIM_TYPE_HTTP = 1;
+    CLAIM_TYPE_RULE = 2;
+  }
+  string ip_address = 1;
+  int32 port = 2;
+  ClaimType claim_type = 3;
+}
+
+message ClaimServerResponse {
+  bool success = 1;
+}
+
+message UnclaimServerRequest {
+  string ip_address = 1;
+  int32 port = 2;
+}
+
+message UnclaimServerResponse {
+  bool success = 1;
+}
+
+message ListClaimedServersRequest {
+  optional bool admin = 1;
+}
+
+message ListClaimedServersResponse {
+  repeated Server server = 1;
+}
+
+message UpdateClaimedServerRequest {
+  string ip_address = 1;
+  int32 port = 2;
+
+  SAGLMetadata sagl_metadata = 3;
+}
+
+message UpdateClaimedServerResponse {
+  Server server = 1;
+}
+
 service ServerService {
   rpc GetServer(GetServerRequest) returns (GetServerResponse);
-  rpc TrackServer(TrackServerRequest) returns (TrackServerResponse);
   rpc ListServers(ListServersRequest) returns (ListServersResponse);
+
+  rpc TrackServer(TrackServerRequest) returns (TrackServerResponse);
+
+  rpc ClaimServer(ClaimServerRequest) returns (ClaimServerResponse);
+  rpc UnclaimServer(UnclaimServerRequest) returns (UnclaimServerResponse);
+  rpc ListClaimedServers(ListClaimedServersRequest) returns (ListClaimedServersResponse);
+  rpc UpdateClaimedServer(UpdateClaimedServerRequest) returns (UpdateClaimedServerResponse);
+}
+
+message StartImageUploadRequest {
+  string filename = 1;
+  int64 filesize = 2;
+  string content_type = 3;
+}
+
+message StartImageUploadResponse {
+  string upload_id = 1;
+  string upload_url = 2;
+}
+
+service MetaService {
+  rpc StartImageUpload(StartImageUploadRequest) returns (StartImageUploadResponse);
 }
 
 enum Timeframe {

@@ -76,3 +76,31 @@ const gameServerPointerSchema = new Schema({
 });
 
 export const GameServerPointer = mongooseInstance.model('GameServerPointer', gameServerPointerSchema);
+
+
+const serverClaimSchema = new Schema({
+	ip: String,
+	port: Number,
+	discordUsername: String,
+	discordId: String,
+	discordAvatar: String,
+	saglId: String,
+});
+
+export const ServerClaim = mongooseInstance.model('ServerClaim', serverClaimSchema);
+
+
+const serverConfigurationSchema = new Schema({
+	ip: String,
+	port: Number,
+
+	icon: String,
+	description: String,
+	profile_icon: String,
+	display_name: String,
+	hostname: String,
+	socials: Object,
+	is_supporter: Boolean,
+});
+
+export const ServerConfiguration = mongooseInstance.model('ServerConfiguration', serverConfigurationSchema);

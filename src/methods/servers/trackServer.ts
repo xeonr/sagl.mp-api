@@ -1,6 +1,7 @@
 import { GetServerRequest, TrackServerRequest, TrackServerResponse } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
 import { GameServerPointer, Server } from '../../models';
-import { getServer, mapServer } from './getServer';
+import { getServer } from './getServer';
+import { mapServer } from './helpers';
 import { query } from '@xeonr/samp-query';
 import { lookupIP } from '../../util/MaxMind';
 import type { CountryRecord } from '@maxmind/geoip2-node';

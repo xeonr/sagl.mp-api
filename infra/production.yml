@@ -52,6 +52,8 @@ spec:
               value: "vault:sagl/data/server-api/s3#accessKeyId"
             - name: S3_SERVER_BUCKET
               value: "vault:sagl/data/server-api/s3#secretAccessKey"
+            - name: JWT_TOKEN
+              value: "vault:sagl/data/server-api/jwt#cloudApiSecret"
           resources:
             requests:
               cpu: "250m"

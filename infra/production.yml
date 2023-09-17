@@ -46,8 +46,12 @@ spec:
               value: "vault:sagl/data/database/clickhouse#username"
             - name: CLICKHOUSE_PASSWORD
               value: "vault:sagl/data/database/clickhouse#password"
-            - name: CLICKHOUSE_DATABASE
-              value: "vault:sagl/data/database/clickhouse#database"
+            - name: AWS_ACCESS_KEY_ID
+              value: "vault:sagl/data/server-api/s3#bucket"
+            - name: AWS_SECRET_ACCESS_KEY
+              value: "vault:sagl/data/server-api/s3#accessKeyId"
+            - name: S3_SERVER_BUCKET
+              value: "vault:sagl/data/server-api/s3#secretAccessKey"
           resources:
             requests:
               cpu: "250m"

@@ -7,7 +7,7 @@ Sentry.init({
 	dsn: 'https://8fe03676e272550898d41445f1ca9680@broken.prod.wtf/3',
 	tracesSampleRate: 1,
 	instrumenter: 'otel',
-	debug: true,
+	debug: false,
 });
 const sdk = new opentelemetry.NodeSDK({
 	instrumentations: [getNodeAutoInstrumentations({

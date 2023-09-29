@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node dist/server.js",
     "build": "tsc --project .",
-    "production": "node dist/index.ts"
+    "production": "node dist/index.js"
   },
   "author": "",
   "license": "ISC",

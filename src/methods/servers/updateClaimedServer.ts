@@ -1,10 +1,10 @@
 import { ConnectError } from '@connectrpc/connect';
 import { Code } from '@connectrpc/connect';
 import type { HandlerContext } from '@connectrpc/connect';
-import { GetServerRequest, UpdateClaimedServerRequest, UpdateClaimedServerResponse } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb';
-import { hasClaimedServer, withAuthentication } from './helpers';
-import { ServerConfiguration } from '../../models';
-import { getServer } from './getServer';
+import { GetServerRequest, UpdateClaimedServerRequest, UpdateClaimedServerResponse } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
+import { hasClaimedServer, withAuthentication } from './helpers.js';
+import { ServerConfiguration } from '../../models/index.js';
+import { getServer } from './getServer.js';
 
 export async function updateClaimedServer(request: UpdateClaimedServerRequest, ctx: HandlerContext): Promise<UpdateClaimedServerResponse> {
 	const hasClaimed = await hasClaimedServer(request.ipAddress, request.port, ctx);

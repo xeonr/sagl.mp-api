@@ -1,8 +1,8 @@
 import type { HandlerContext } from '@connectrpc/connect';
 import {
 	StartImageUploadRequest, StartImageUploadResponse,
-} from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb';
-import { withAuthentication } from "../servers/helpers";
+} from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
+import { withAuthentication } from "../servers/helpers.js";
 import { v4 } from "uuid";
 import { Code, ConnectError } from "@connectrpc/connect";
 

@@ -1,5 +1,5 @@
 import { GetGameVersionDistributionRequest, GetGameVersionDistributionResponse, GetGameVersionDistributionResponse_GameVersion } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
-import { aggregate } from './shared';
+import { aggregate } from './shared.js';
 
 export async function getGameVersionDistribution(_: GetGameVersionDistributionRequest): Promise<GetGameVersionDistributionResponse> {
 	return aggregate('rules.version', [])

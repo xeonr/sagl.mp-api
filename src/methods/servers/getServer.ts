@@ -1,6 +1,6 @@
 import { GetServerRequest, GetServerResponse } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
-import { Server } from '../../models';
-import { mapServer } from './helpers';
+import { Server } from '../../models/index.js';
+import { mapServer } from './helpers.js';
 
 export async function getServer(request: GetServerRequest): Promise<GetServerResponse> {
 	const server = await Server.aggregate([

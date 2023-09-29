@@ -1,5 +1,5 @@
 import { GetNetworkCountryDistributionRequest, GetNetworkCountryDistributionResponse, GetNetworkCountryDistributionResponse_NetworkCountry } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
-import { aggregate } from './shared';
+import { aggregate } from './shared.js';
 
 export async function getNetworkCountryDistribution(_: GetNetworkCountryDistributionRequest): Promise<GetNetworkCountryDistributionResponse> {
 	return aggregate('country', [])

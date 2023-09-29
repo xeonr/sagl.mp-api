@@ -1,6 +1,6 @@
 import { ConnectError, type HandlerContext, Code } from '@connectrpc/connect';
 import { Server as ServerType } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
-import { ServerClaim, type IServer } from '../../models';
+import { ServerClaim, type IServer } from '../../models/index.js';
 import { default as normalizeUrl } from 'normalize-url';
 import { verify } from 'jsonwebtoken-esm';
 

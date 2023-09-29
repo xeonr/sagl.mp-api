@@ -1,6 +1,6 @@
 import { Datapoint, GetPingTimeseriesRequest, GetPingTimeseriesResponse, Timeframe } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
-import { clickhouseClient, dateToClickhouseDateTime } from '../../util/Clickhouse';
-import { roundTo30Minutes } from '../../util/utils';
+import { clickhouseClient, dateToClickhouseDateTime } from '../../util/Clickhouse.js';
+import { roundTo30Minutes } from '../../util/utils.js';
 import moment from 'moment';
 export async function getServerPing(request: GetPingTimeseriesRequest): Promise<GetPingTimeseriesResponse> {
 	const fromDate = roundTo30Minutes(moment().subtract(1, request.period === Timeframe.DAY ? 'day' : 'week'));

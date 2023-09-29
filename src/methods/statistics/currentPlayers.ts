@@ -1,5 +1,5 @@
 import { CurrentPlayersRequest, CurrentPlayersResponse } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
-import { Server } from '../../models';
+import { Server } from '../../models/index.js';
 
 export async function currentPlayers(_: CurrentPlayersRequest): Promise<CurrentPlayersResponse> {
 	const data = await Server.aggregate([{

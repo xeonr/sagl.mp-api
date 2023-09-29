@@ -1,5 +1,5 @@
 import { GetGameModeDistributionRequest, GetGameModeDistributionResponse, GetGameModeDistributionResponse_GameMode } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
-import { aggregate } from './shared';
+import { aggregate } from './shared.js';
 
 export async function getGameModeDistribution(_: GetGameModeDistributionRequest): Promise<GetGameModeDistributionResponse> {
 	return aggregate('gamemode', [])

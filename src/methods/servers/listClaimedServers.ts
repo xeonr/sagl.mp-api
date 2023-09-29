@@ -1,7 +1,7 @@
 import { type HandlerContext  } from '@connectrpc/connect';
 import { ListClaimedServersRequest, ListClaimedServersResponse } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
-import { Server, ServerClaim, ServerConfiguration } from '../../models';
-import { mapServer, withAuthentication } from './helpers';
+import { Server, ServerClaim, ServerConfiguration } from '../../models/index.js';
+import { mapServer, withAuthentication } from './helpers.js';
 
 export async function listClaimedServers(request: ListClaimedServersRequest, ctx: HandlerContext): Promise<ListClaimedServersResponse> {
 	const { discord, scopes } = withAuthentication(ctx);

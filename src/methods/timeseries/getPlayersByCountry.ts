@@ -1,6 +1,6 @@
 import { Datapoint, GetPlayersByCountryRequest, GetPlayersByCountyResponse, GetPlayersByCountyResponse_CountryTimeseries } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
 import moment from 'moment';
-import { clickhouseClient, dateToClickhouseDateTime } from '../../util/Clickhouse';
+import { clickhouseClient, dateToClickhouseDateTime } from '../../util/Clickhouse.js';
 import lodash from 'lodash';
 
 export async function getPlayersByCountry(_: GetPlayersByCountryRequest): Promise<GetPlayersByCountyResponse> {

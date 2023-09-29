@@ -5,9 +5,9 @@ import {
 	ClaimServerRequest_ClaimType,
 	ClaimServerResponse,
 } from "@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js";
-import { Server, ServerClaim } from "../../models";
+import { Server, ServerClaim } from "../../models/index.js";
 import { query } from "@xeonr/samp-query";
-import { withAuthentication } from './helpers';
+import { withAuthentication } from './helpers.js';
 
 const ruleKeys = ["owners", "discord-owners", "sagl-owners"];
 

@@ -6,10 +6,10 @@ import {
 	ListServersResponse,
 	Operator,
 } from "@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js";
-import { Server } from "../../models";
-import { mapServer } from "./helpers";
+import { Server } from "../../models/index.js";
+import { mapServer } from "./helpers.js";
 import type { PipelineStage } from "mongoose";
-import { getRecentDataTimestamp } from "../../util/utils";
+import { getRecentDataTimestamp } from "../../util/utils.js";
 import * as crypto from "crypto";
 
 const fieldMap: {
@@ -66,6 +66,9 @@ const fieldMap: {
 	[FieldName.DISCORD_GUILD]: {
 		key: "query",
 	},
+	[FieldName.IS_OPENMP]: {
+		key: 'openmp'
+	}
 };
 
 function generateMongoQuery(

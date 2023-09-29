@@ -1,9 +1,9 @@
 import { GetServerRequest, TrackServerRequest, TrackServerResponse } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
-import { GameServerPointer, Server } from '../../models';
-import { getServer } from './getServer';
-import { mapServer } from './helpers';
+import { GameServerPointer, Server } from '../../models/index.js';
+import { getServer } from './getServer.js';
+import { mapServer } from './helpers.js';
 import { query } from '@xeonr/samp-query';
-import { lookupIP } from '../../util/MaxMind';
+import { lookupIP } from '../../util/MaxMind.js';
 import type { CountryRecord } from '@maxmind/geoip2-node';
 
 function addPointer(ip: string, port: number): Promise<void> {

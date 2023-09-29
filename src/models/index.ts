@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose';
-import { mongooseInstance } from '../util/Mongoose';
+import { mongooseInstance } from '../util/Mongoose.js';
 
 export interface IServer {
 	address: string;

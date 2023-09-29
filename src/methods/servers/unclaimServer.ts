@@ -1,8 +1,8 @@
 import { ConnectError, Code } from '@connectrpc/connect';
 import type { HandlerContext } from '@connectrpc/connect';
-import { UnclaimServerRequest, UnclaimServerResponse } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb';
-import { hasClaimedServer, withAuthentication } from './helpers';
-import { ServerClaim } from '../../models';
+import { UnclaimServerRequest, UnclaimServerResponse } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
+import { hasClaimedServer, withAuthentication } from './helpers.js';
+import { ServerClaim } from '../../models/index.js';
 
 export async function unclaimServer(request: UnclaimServerRequest, ctx: HandlerContext): Promise<UnclaimServerResponse> {
 	const { discord } = withAuthentication(ctx);

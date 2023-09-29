@@ -1,5 +1,5 @@
-import { Server } from '../../models';
-import { getRecentDataTimestamp } from '../../util/utils';
+import { Server } from '../../models/index.js';
+import { getRecentDataTimestamp } from '../../util/utils.js';
 
 export async function aggregate<T extends string>(property: string, extra: T[]): Promise<({ key: string; value: number; } & { [key in T]: any })[]> {
 	const extraProps: { [key: string]: any } = {};

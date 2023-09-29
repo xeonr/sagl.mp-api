@@ -1,10 +1,20 @@
+import type { HandlerContext } from '@connectrpc/connect';
 import { NearbyServersRequest, NearbyServersResponse, NearbyServersResponse_CloseGameServer } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
-import { Server } from '../../models';
-import { getRecentDataTimestamp } from '../../util/utils';
+import { Server } from '../../models/index.js';
+import { getRecentDataTimestamp } from '../../util/utils.js';
+import { lookupIP } from '../../util/MaxMind.js';
 
-export async function nearbyServers(_: NearbyServersRequest): Promise<NearbyServersResponse> {
-	const latitude = 52.3788758;
-	const longitude = -1.3086567;
+export async function nearbyServers(_: NearbyServersRequest, context: HandlerContext): Promise<NearbyServersResponse> {
+	let latitude = 0;
+	let longitude = 0;
+
+	try {
+		const ip = lookupIP(context.requestHeader.get('CF-Connecting-IP') ?? '')
+		latitude = ip.city?.location?.latitude ?? 0;
+		longitude = ip.city?.location?.longitude ?? 0;
+	} catch(e) {
+		//
+	}
 
 	const results = await Server.aggregate([
 		{

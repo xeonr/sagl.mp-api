@@ -54,7 +54,11 @@ const fieldMap: {
 		transform: (val: string[]) => val.map((v) => v === "true"),
 	},
 	[FieldName.IS_SUPPORTER]: {
-		key: "online",
+		key: "saglconfig.0.is_supporter",
+		transform: (val: string[]) => val.map((v) => v === "true"),
+	},
+	[FieldName.IS_OPENMP]: {
+		key: "rules.openmp",
 		transform: (val: string[]) => val.map((v) => v === "true"),
 	},
 	[FieldName.ADDRESS]: {
@@ -82,6 +86,25 @@ function generateMongoQuery(
 } {
 	const stages: PipelineStage[] = [
 		{ $match: { lastUpdatedAt: { $gte: getRecentDataTimestamp() } } },
+		{
+			$lookup: {
+				from: 'serverconfigurations',
+				as: 'saglconfig',
+				let: { ip: '$ip', port: '$port' },
+				pipeline: [
+					{
+						$match: {
+							$expr: {
+								$and: [
+									{ $eq: ['$ip', '$$ip'] },
+									{ $eq: ['$port', '$$port'] },
+								]
+							}
+						}
+					},
+				],
+			}
+		},
 	];
 
 	stages.push(
@@ -267,25 +290,8 @@ export async function listServers(
 		},
 	});
 
-	query.push({
+
 		$lookup: {
-			from: 'serverconfigurations',
-			as: 'saglconfig',
-			let: { ip: '$ip', port: '$port' },
-			pipeline: [
-				{
-					$match: {
-						$expr: {
-							$and: [
-								{ $eq: ['$ip', '$$ip'] },
-								{ $eq: ['$port', '$$port'] },
-							]
-						}
-					}
-				},
-			],
-		}
-	})
 
 	return Server.aggregate(query).then(async (servers) => {
 		return new ListServersResponse({

@@ -4,7 +4,33 @@ import { mapServer } from './helpers.js';
 
 export async function getServer(request: GetServerRequest): Promise<GetServerResponse> {
 	const server = await Server.aggregate([
-		{ $match: { address: request.target } },
+		{
+			$lookup: {
+				from: 'serverconfigurations',
+				as: 'saglconfig',
+				let: { ip: '$ip', port: '$port' },
+				pipeline: [
+					{
+						$match: {
+							$expr: {
+								$and: [
+									{ $eq: ['$ip', '$$ip'] },
+									{ $eq: ['$port', '$$port'] },
+								]
+							}
+						}
+					},
+				],
+			}
+		},
+		{
+			$match: {
+				$or: [
+					{ address: request.target },
+					{ "saglconfig.0.hostname": request.target.split(':')[0], port: +request.target.split(':')[1] ?? 7777 },
+				],
+			}
+		},
 		{
 			$lookup: {
 				from: 'serverclaims',
@@ -22,25 +48,6 @@ export async function getServer(request: GetServerRequest): Promise<GetServerRes
 						}
 					},
 					{ $project: { _id: 0, username: "$discordUsername", avatar: "$discordAvatar", "id": "$discordId" } }
-				],
-			}
-		},
-		{
-			$lookup: {
-				from: 'serverconfigurations',
-				as: 'saglconfig',
-				let: { ip: '$ip', port: '$port' },
-				pipeline: [
-					{
-						$match: {
-							$expr: {
-								$and: [
-									{ $eq: ['$ip', '$$ip'] },
-									{ $eq: ['$port', '$$port'] },
-								]
-							}
-						}
-					},
 				],
 			}
 		},

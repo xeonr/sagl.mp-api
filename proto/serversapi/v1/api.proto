@@ -92,6 +92,7 @@ enum FieldName {
   IS_PASSWORDED = 9;
   IS_HOSTED = 10;
   IS_SUPPORTER = 11;
+  IS_OPENMP = 15;
   ADDRESS = 12;
   QUERY = 13;
   DISCORD_GUILD = 14;

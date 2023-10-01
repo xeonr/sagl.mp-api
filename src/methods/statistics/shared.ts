@@ -9,12 +9,12 @@ export async function aggregate<T extends string>(property: string, extra: T[]):
 
 	const resp = await Server.aggregate([
 		{ $match: { lastUpdatedAt: { $gte: getRecentDataTimestamp() }  } },
-		{ $group: { _id: { [property]: `$${property}`, }, ...extraProps, count: { $sum: 1 } } },
+		{ $group: { _id: `$${property}`, ...extraProps, count: { $sum: 1 } } },
 		{ $sort: { count: -1 }},
 	]);
 
 	return resp.map(val => <any>({
-		key: val._id[property],
+		key: val._id,
 		value: val.count,
 		...extra.reduce((acc, cur) => ({ ...acc, [cur]: val[cur] }), {}),
 	}))

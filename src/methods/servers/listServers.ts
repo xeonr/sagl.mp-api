@@ -70,9 +70,6 @@ const fieldMap: {
 	[FieldName.DISCORD_GUILD]: {
 		key: "query",
 	},
-	[FieldName.IS_OPENMP]: {
-		key: 'openmp'
-	}
 };
 
 function generateMongoQuery(

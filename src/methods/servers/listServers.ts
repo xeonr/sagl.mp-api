@@ -290,9 +290,6 @@ export async function listServers(
 		},
 	});
 
-
-		$lookup: {
-
 	return Server.aggregate(query).then(async (servers) => {
 		return new ListServersResponse({
 			server: await Promise.all(

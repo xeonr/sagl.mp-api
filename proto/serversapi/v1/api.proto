@@ -93,6 +93,7 @@ enum FieldName {
   IS_HOSTED = 10;
   IS_SUPPORTER = 11;
   IS_OPENMP = 15;
+  IS_PUBLIC = 16;
   ADDRESS = 12;
   QUERY = 13;
   DISCORD_GUILD = 14;

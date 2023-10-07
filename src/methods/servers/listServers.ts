@@ -13,7 +13,7 @@ import { getRecentDataTimestamp } from "../../util/utils.js";
 import * as crypto from "crypto";
 
 const fieldMap: {
-	[key in FieldName]: { key: string; transform?: (key: string[]) => any };
+	[key in FieldName]: ({ key: string; transform?: (key: string[]) => any } | { children: { key: string; operator: string; transform?: (key: string[]) => any }[] })
 } = {
 	[FieldName.CURRENT_PLAYERS]: {
 		key: "onlinePlayers",
@@ -49,6 +49,11 @@ const fieldMap: {
 		key: "passworded",
 		transform: (val: string[]) => val.map((v) => v === "true"),
 	},
+
+	[FieldName.IS_PUBLIC]: {
+		key: "passworded",
+		transform: (val: string[]) => val.map((v) => v !== "true"),
+	},
 	[FieldName.IS_HOSTED]: {
 		key: "hosted",
 		transform: (val: string[]) => val.map((v) => v === "true"),
@@ -62,15 +67,21 @@ const fieldMap: {
 		transform: (val: string[]) => val.map((v) => v === "true"),
 	},
 	[FieldName.ADDRESS]: {
-		key: "address",
+		children: [
+			{ key: 'address', operator: '$match' },
+			{ key: 'saglconfig.0.hostname', operator: '$match', transform: (val: string[]) => val.map((v) => v.split(':')[0]) },
+		]
 	},
 	[FieldName.QUERY]: {
 		key: "query",
+		children: [
+		]
 	},
 	[FieldName.DISCORD_GUILD]: {
 		key: "query",
 	},
 };
+
 
 function generateMongoQuery(
 	request: ListServersRequest_ListServersRequestFilter,
@@ -81,6 +92,16 @@ function generateMongoQuery(
 	limit: number;
 	offset: number;
 } {
+	const textSearch: PipelineStage | undefined = !!request.filter.find(i => i.field === FieldName.QUERY)?.value  ? {
+		$search: {
+			index: "sagl_query_search",
+			"autocomplete": {
+				"path": "hostname",
+				"query": request.filter.find(i => i.field === FieldName.QUERY)?.value,
+			}
+		}
+	} : undefined;
+
 	const stages: PipelineStage[] = [
 		{ $match: { lastUpdatedAt: { $gte: getRecentDataTimestamp() } } },
 		{
@@ -107,63 +128,99 @@ function generateMongoQuery(
 	stages.push(
 		...(request.filter
 			.map((filter) => {
-				const fieldName = fieldMap[filter.field].key;
-				const fieldValue = fieldMap[filter.field].transform
-					? fieldMap[filter.field].transform?.(filter.value)
-					: filter.value;
+				const fieldMapItem = fieldMap[filter.field];
 
-				if (filter.operator === Operator.EQUAL) {
-					if (fieldValue.length <= 1) {
-						return { $match: { [fieldName]: fieldValue[0] } };
+				if ('children' in fieldMapItem) {
+					if (!fieldMapItem.children.length) {
+						return null;
 					}
 
-					return { $match: { [fieldName]: { $in: fieldValue } } };
-				}
+					const rawObject = fieldMapItem.children.map(item => ({
+						[item.operator]: {
+							[item.key]: item.transform
+								? item.transform?.(filter.value)
+								: filter.value
+						}
+					}));
 
-				if (filter.operator === Operator.NOT_EQUAL) {
-					if (filter.value.length <= 1) {
+					return {
+						$match: {
+							$or: rawObject,
+						}
+					}
+				} else {
+					const fieldName = fieldMapItem.key;
+					const fieldValue = fieldMapItem.transform
+						? fieldMapItem.transform?.(filter.value)
+						: filter.value;
+
+					if (filter.operator === Operator.EQUAL) {
+						if (fieldValue.length <= 1) {
+							return { $match: { [fieldName]: fieldValue[0] } };
+						}
+
+						return { $match: { [fieldName]: { $in: fieldValue } } };
+					}
+
+					if (filter.operator === Operator.NOT_EQUAL) {
+						if (filter.value.length <= 1) {
+							return {
+								$match: { [fieldName]: { $ne: fieldValue[0] } },
+							};
+						}
+
+						return { $match: { [fieldName]: { $nin: fieldValue } } };
+					}
+
+					if (filter.operator === Operator.GREATER_THAN) {
+						return { $match: { [fieldName]: { $gt: fieldValue } } };
+					}
+
+					if (filter.operator === Operator.LESS_THAN) {
+						return { $match: { [fieldName]: { $lt: fieldValue } } };
+					}
+
+					if (filter.operator === Operator.BETWEEN) {
 						return {
-							$match: { [fieldName]: { $ne: fieldValue[0] } },
+							$match: {
+								[fieldName]: {
+									$gte: fieldValue[0],
+									$lte: fieldValue[1],
+								},
+							},
 						};
 					}
 
-					return { $match: { [fieldName]: { $nin: fieldValue } } };
+					return null;
 				}
-
-				if (filter.operator === Operator.GREATER_THAN) {
-					return { $match: { [fieldName]: { $gt: fieldValue } } };
-				}
-
-				if (filter.operator === Operator.LESS_THAN) {
-					return { $match: { [fieldName]: { $lt: fieldValue } } };
-				}
-
-				if (filter.operator === Operator.BETWEEN) {
-					return {
-						$match: {
-							[fieldName]: {
-								$gte: fieldValue[0],
-								$lte: fieldValue[1],
-							},
-						},
-					};
-				}
-
-				return null;
 			})
 			.filter((i) => i !== null) as PipelineStage[])
 	);
 
+	const sortItem = fieldMap[request.sort!.field];
+
+
+	let extraSort = {
+		['key' in sortItem ? sortItem.key : 'onlinePlayers']: request.sort?.ascending
+			? 1
+			: -1,
+	};
+
+	if (textSearch) {
+		extraSort = {textSortKey: -1}
+		stages.push({
+			$addFields: { textSortKey: { $meta: "searchScore" } },
+		})
+	}
+
 	stages.push({
-		$sort: {
-			[fieldMap[request.sort!.field].key]: request.sort?.ascending
-				? 1
-				: -1,
-		},
+		$sort: extraSort as any,
 	});
 
+	if (textSearch) stages.unshift(textSearch);
+
 	return {
-		query: [...stages, { $limit: Math.min(100, request.limit) }],
+		query: [...stages, { $limit: Math.max(100, request.limit) }],
 		stages,
 		limit: request.limit,
 		offset: offset + request.limit,
@@ -249,7 +306,12 @@ export async function listServers(
 			decoded.limit
 		);
 
-		(query as any)[0]['$match']!['lastUpdatedAt']['$gte'] = new Date((query as any)[0]['$match']!['lastUpdatedAt']['$gte'])
+		// handle text search being first in some cases..
+		if ((query as any)[0]?.['$match']?.['lastUpdatedAt']) {
+			(query as any)[0]['$match']!['lastUpdatedAt']['$gte'] = new Date((query as any)[0]['$match']!['lastUpdatedAt']['$gte'])
+		} else {
+			(query as any)[1]['$match']!['lastUpdatedAt']['$gte'] = new Date((query as any)[1]['$match']!['lastUpdatedAt']['$gte'])
+		}
 
 		query.push(
 			{ $skip: decoded.offset },

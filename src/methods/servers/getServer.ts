@@ -56,8 +56,6 @@ export async function getServer(request: GetServerRequest): Promise<GetServerRes
 		// }
 	])
 
-	console.log(JSON.stringify(server, null, 2));
-
 	return new GetServerResponse({
 		server: server?.length ? await mapServer(server[0]) : undefined,
 	});

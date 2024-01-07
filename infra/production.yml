@@ -36,8 +36,6 @@ spec:
           env:
             - name: NODE_ENV
               value: production
-            - name: REDIS_URL
-              value: "vault:sagl/data/database/redis#uri"
             - name: MONGODB_URI
               value: "vault:sagl/data/database/mongodb#uri"
             - name: CLICKHOUSE_HOST

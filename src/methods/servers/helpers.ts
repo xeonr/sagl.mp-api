@@ -2,12 +2,12 @@ import { ConnectError, type HandlerContext, Code } from '@connectrpc/connect';
 import { Server as ServerType } from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
 import { ServerClaim, type IServer } from '../../models/index.js';
 import { default as normalizeUrl } from 'normalize-url';
-import { verify } from 'jsonwebtoken-esm';
+import { jwtVerify } from 'jose';
 
 
-export const withAuthentication = (
+export const withAuthentication = async (
 	ctx: HandlerContext
-): {
+): Promise<{
 	discord: {
 		id: string;
 		avatar: string;
@@ -15,7 +15,7 @@ export const withAuthentication = (
 	};
 	scopes: string[];
 	userId: string;
-} => {
+}> => {
 	const authz = ctx.requestHeader.get("authorization");
 	if (!authz)
 		throw new ConnectError("Missing authorization", Code.PermissionDenied);
@@ -23,9 +23,10 @@ export const withAuthentication = (
 	if (!token)
 		throw new ConnectError("Missing authorization", Code.PermissionDenied);
 
-	let tk;
+	let payload;
 	try {
-		tk = verify(token, process.env.JWT_TOKEN!);
+		const tk = await jwtVerify(token, new TextEncoder().encode(process.env.JWT_TOKEN!));
+		payload = tk.payload;
 	} catch (e) {
 		throw new ConnectError(
 			"Invalid authorization token",
@@ -33,7 +34,7 @@ export const withAuthentication = (
 		);
 	}
 
-	return tk as any;
+	return payload as any;
 };
 
 export function inferSocials(weburl?: string): Map<string, string> {
@@ -149,7 +150,7 @@ export async function mapServer(server: IServer): Promise<ServerType> {
 }
 
 export async function hasClaimedServer(ip: string, port: number, ctx: HandlerContext): Promise<boolean> {
-	const { discord, scopes } = withAuthentication(ctx);
+	const { discord, scopes } = await withAuthentication(ctx);
 
 	if (scopes.includes('admin')) {
 		return true;

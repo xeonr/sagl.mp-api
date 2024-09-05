@@ -8,7 +8,7 @@ import { getServer } from './getServer.js';
 
 export async function updateClaimedServer(request: UpdateClaimedServerRequest, ctx: HandlerContext): Promise<UpdateClaimedServerResponse> {
 	const hasClaimed = await hasClaimedServer(request.ipAddress, request.port, ctx);
-	const { scopes } = withAuthentication(ctx);
+	const { scopes } = await withAuthentication(ctx);
 
 	if (!hasClaimed) {
 		throw new ConnectError('You do not own this server', Code.FailedPrecondition);

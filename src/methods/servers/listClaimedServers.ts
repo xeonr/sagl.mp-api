@@ -4,7 +4,7 @@ import { Server, ServerClaim, ServerConfiguration } from '../../models/index.js'
 import { mapServer, withAuthentication } from './helpers.js';
 
 export async function listClaimedServers(request: ListClaimedServersRequest, ctx: HandlerContext): Promise<ListClaimedServersResponse> {
-	const { discord, scopes } = withAuthentication(ctx);
+	const { discord, scopes } = await withAuthentication(ctx);
 	const claimedServers = (request.admin && scopes.includes('admin')) ? await ServerConfiguration.find({})
 	.then(r => r.map((data) => `${data.ip}:${data.port}`)) : await ServerClaim.find(
 		{ discordUsername: discord.username },

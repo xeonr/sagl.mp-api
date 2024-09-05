@@ -1,7 +1,8 @@
-import type { HandlerContext } from '@connectrpc/connect';
+import type { HandlerContext } from "@connectrpc/connect";
 import {
-	StartImageUploadRequest, StartImageUploadResponse,
-} from '@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js';
+	StartImageUploadRequest,
+	StartImageUploadResponse,
+} from "@buf/xeonr_sagl-servers.bufbuild_es/serversapi/v1/api_pb.js";
 import { withAuthentication } from "../servers/helpers.js";
 import { v4 } from "uuid";
 import { Code, ConnectError } from "@connectrpc/connect";
@@ -12,13 +13,14 @@ const client = new S3Client({
 	region: "eu-west-2",
 });
 
-
-
-export async function startImageUpload(request: StartImageUploadRequest, ctx: HandlerContext): Promise<StartImageUploadResponse> {
-	const { } = withAuthentication(ctx);
+export async function startImageUpload(
+	request: StartImageUploadRequest,
+	ctx: HandlerContext
+): Promise<StartImageUploadResponse> {
+	const {} = await withAuthentication(ctx);
 
 	if (request.filesize >= 10000000) {
-		throw new ConnectError('File size too large', Code.OutOfRange);
+		throw new ConnectError("File size too large", Code.OutOfRange);
 	}
 
 	const uuid = v4();
@@ -29,6 +31,7 @@ export async function startImageUpload(request: StartImageUploadRequest, ctx: Ha
 		Key: `usercontent/${uuid}`,
 		Bucket: process.env.S3_SERVER_BUCKET,
 	});
+
 	const url = await getSignedUrl(client, command, { expiresIn: 3600 });
 
 	return new StartImageUploadResponse({

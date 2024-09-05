@@ -5,7 +5,7 @@ import { hasClaimedServer, withAuthentication } from './helpers.js';
 import { ServerClaim } from '../../models/index.js';
 
 export async function unclaimServer(request: UnclaimServerRequest, ctx: HandlerContext): Promise<UnclaimServerResponse> {
-	const { discord } = withAuthentication(ctx);
+	const { discord } = await withAuthentication(ctx);
 	const hasClaimed = await hasClaimedServer(request.ipAddress, request.port, ctx);
 
 	if (!hasClaimed) {

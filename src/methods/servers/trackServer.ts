@@ -89,9 +89,8 @@ export async function trackServer(request: TrackServerRequest): Promise<TrackSer
 				server: newServer,
 			});
 		})
-		.catch((e) => {
+		.catch((e: any) => {
 			console.log(e);
-			// who
 			return new TrackServerResponse({});
 		});
 }

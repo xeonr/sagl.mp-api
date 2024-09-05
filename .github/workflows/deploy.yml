@@ -25,7 +25,7 @@ jobs:
 
     - name: Build and Push Container
       run: |-
-        docker build --build-arg NPM_TOKEN=${{secrets.GH_SECRET}} -t europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api:${{  github.run_number }} .
+        docker build --build-arg MAXMIND_APIKEY=${{secrets.MAXMIND_APIKEY}} --build-arg NPM_TOKEN=${{secrets.GH_SECRET}} -t europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api:${{  github.run_number }} .
         docker push europe-west1-docker.pkg.dev/xeonr-io/sagl/server-api:${{  github.run_number }}
 
     - uses: azure/k8s-set-context@v1

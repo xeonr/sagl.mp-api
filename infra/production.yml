@@ -97,3 +97,9 @@ spec:
       services:
         - name: server-api
           port: 80
+    - kind: Rule
+      match: Host(`api.sagl.mp`)
+      priority: 11
+      services:
+        - name: server-api
+          port: 80

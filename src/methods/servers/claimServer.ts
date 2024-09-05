@@ -25,7 +25,7 @@ async function hasClaimed(ip: string, port: number, type: ClaimServerRequest_Cla
 				}
 				return r.json()
 			})
-			.then(res => {
+			.then((res: any) => {
 				if (res.owners && Array.isArray(res.owners) && res.owners.length && res.owners.some((owner: string) => owner.toLowerCase() === username.toLowerCase())) {
 					return true;
 				}
@@ -75,7 +75,7 @@ export async function claimServer(
 	req: ClaimServerRequest,
 	ctx: HandlerContext
 ): Promise<ClaimServerResponse> {
-	const { userId, discord } = withAuthentication(ctx);
+	const { userId, discord } = await withAuthentication(ctx);
 
 	const server = await Server.findOne({ ip: req.ipAddress, port: req.port });
 

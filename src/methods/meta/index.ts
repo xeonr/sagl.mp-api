@@ -4,6 +4,9 @@ import {MetaService} from '@buf/xeonr_sagl-servers.connectrpc_es/serversapi/v1/a
 import { wrap } from '../../util/wrap.js';
 import {startImageUpload} from "./startImageUpload.js";
 
+
 export default function (router: ConnectRouter) {
-	router.rpc(MetaService, MetaService.methods.startImageUpload, wrap(startImageUpload));
+	router.service(MetaService, {
+		startImageUpload: wrap(startImageUpload),
+	});
 }
